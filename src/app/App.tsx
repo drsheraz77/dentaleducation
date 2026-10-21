@@ -7,7 +7,8 @@ import { SceneToolbar } from '../components/controls/SceneToolbar';
 import { Timeline } from '../components/controls/Timeline';
 import { QuizPanel } from '../components/assessment/QuizPanel';
 import { useSim } from '../state/store';
-import { deriveScene, getTimeline, isTextbookView } from '../state/selectors';
+import { deriveScene, getTimeline, isTextbookView, isTubulesView } from '../state/selectors';
+import { TubulesView } from '../modules/anatomy/TubulesView';
 import { TISSUE_COLORS } from '../three/colors';
 
 // three.js, React Three Fiber and the CSG engine are loaded on demand so the UI shell appears immediately.
@@ -89,6 +90,7 @@ function Notice() {
 export default function App() {
   const topic = useSim((s) => s.topic);
   const textbook = useSim(isTextbookView);
+  const tubules = useSim(isTubulesView);
   useGuidedViewSync();
   const show3D = topic !== 'quiz';
   return (
@@ -99,14 +101,20 @@ export default function App() {
         <main className="workspace" aria-label="Workspace">
           <ModuleControls />
           {show3D ? (
-            <div className={textbook ? 'viewport viewport--textbook' : 'viewport'}>
-              <Suspense fallback={<SceneLoading />}>
-                <ToothScene />
-              </Suspense>
-              <SceneToolbar />
+            <div className={textbook || tubules ? 'viewport viewport--textbook' : 'viewport'}>
+              {tubules ? (
+                <TubulesView />
+              ) : (
+                <>
+                  <Suspense fallback={<SceneLoading />}>
+                    <ToothScene />
+                  </Suspense>
+                  <SceneToolbar />
+                  <Notice />
+                  <Legend />
+                </>
+              )}
               <GuidedBanner />
-              <Notice />
-              <Legend />
             </div>
           ) : (
             <QuizPanel />

@@ -140,6 +140,7 @@ function SceneContent({ scene, anchors }: { scene: SceneDescription; anchors: La
                 selected={state.selectedStructure}
                 speed={state.speed}
                 guided={guided}
+                textbook={isTextbookView(state)}
               />
             </group>
           );

@@ -18,6 +18,7 @@ import { QUIZ } from '../data/quiz';
 import { getTimeline } from './selectors';
 
 export type MaterialsTab = 'workflow' | 'compare';
+export type AnatomyView = 'section' | 'tubules';
 
 export interface QuizState {
   index: number;
@@ -34,6 +35,12 @@ export interface SimState {
   /** Anatomy module: show a carious lesion on the reference tooth. */
   pathology: boolean;
   selectedStructure: StructureId | null;
+  /** Anatomy module: whole-tooth section or the magnified dentin-tubule view. */
+  anatomyView: AnatomyView;
+  /** Tubule view: dentin exposed by gingival recession. */
+  dentinExposed: boolean;
+  /** Tubule view: tubule openings occluded (desensitising treatment). */
+  tubulesOccluded: boolean;
 
   step: number;
   playing: boolean;
@@ -68,6 +75,9 @@ export interface SimActions {
   toggleSupport: () => void;
   togglePathology: () => void;
   selectStructure: (id: StructureId | null) => void;
+  setAnatomyView: (view: AnatomyView) => void;
+  toggleDentinExposed: () => void;
+  toggleTubulesOccluded: () => void;
 
   setStep: (step: number) => void;
   nextStep: () => void;
@@ -109,6 +119,9 @@ export const initialState: SimState = {
   showSupport: true,
   pathology: false,
   selectedStructure: null,
+  anatomyView: 'section',
+  dentinExposed: true,
+  tubulesOccluded: false,
   step: 0,
   playing: false,
   speed: 1,
@@ -135,7 +148,7 @@ const clampStep = (s: SimState, step: number) => {
 
 /** Side effects of landing on a step (anatomy tour selects the structure it describes). */
 const stepPatch = (s: SimState, step: number): Partial<SimState> =>
-  s.topic === 'anatomy' ? { step, selectedStructure: ANATOMY_TOUR[step] ?? null } : { step };
+  s.topic === 'anatomy' && s.anatomyView === 'section' ? { step, selectedStructure: ANATOMY_TOUR[step] ?? null } : { step };
 
 export const useSim = create<Store>()((set, get) => ({
   ...initialState,
@@ -163,6 +176,9 @@ export const useSim = create<Store>()((set, get) => ({
   toggleSupport: () => set((s) => ({ showSupport: !s.showSupport })),
   togglePathology: () => set((s) => ({ pathology: !s.pathology })),
   selectStructure: (selectedStructure) => set({ selectedStructure }),
+  setAnatomyView: (anatomyView) => set({ anatomyView, step: 0, playing: false, selectedStructure: null }),
+  toggleDentinExposed: () => set((s) => ({ dentinExposed: !s.dentinExposed })),
+  toggleTubulesOccluded: () => set((s) => ({ tubulesOccluded: !s.tubulesOccluded })),
 
   setStep: (step) => set((s) => stepPatch(s, clampStep(s, step))),
   nextStep: () => {

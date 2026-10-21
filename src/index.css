@@ -1102,3 +1102,220 @@ table.compare th[scope='row'] {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------- */
+/* Magnified dentin tubules view                                     */
+/* ---------------------------------------------------------------- */
+
+.tubules-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  background: radial-gradient(ellipse at 45% 40%, #ffffff, #eef1f5);
+}
+
+.tubules-svg {
+  width: 100%;
+  max-width: 900px;
+  max-height: calc(100% - 60px);
+}
+
+.tubules-svg text {
+  font-family: var(--font);
+}
+
+.tv-click {
+  cursor: pointer;
+}
+
+.tv-texture {
+  fill: none;
+  stroke: #d9a877;
+  stroke-width: 0.8;
+  opacity: 0.55;
+}
+
+.tv-tubule {
+  fill: none;
+  stroke: #a9cdf0;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.tv-fluid {
+  fill: none;
+  stroke: #2f6fd1;
+  stroke-width: 3;
+  stroke-dasharray: 6 8;
+}
+
+.tv-fluid--outward {
+  animation: tv-flow-out 0.7s linear infinite;
+}
+
+.tv-fluid--inward {
+  animation: tv-flow-in 0.7s linear infinite;
+}
+
+.tv-fluid--oscillating {
+  animation: tv-flow-out 0.35s ease-in-out infinite alternate;
+}
+
+@keyframes tv-flow-out {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 28;
+  }
+}
+
+@keyframes tv-flow-in {
+  from {
+    stroke-dashoffset: 28;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.tv-process {
+  fill: none;
+  stroke: #c26d8c;
+  stroke-width: 2.4;
+}
+
+.tv-fibre {
+  fill: none;
+  stroke: #e3b21c;
+  stroke-width: 2.4;
+}
+
+.tv-fibre--firing {
+  stroke: #f59e0b;
+  stroke-width: 3.4;
+  filter: drop-shadow(0 0 3px #fbbf24);
+}
+
+.tv-impulse {
+  fill: #fde047;
+  stroke: #f59e0b;
+  animation: tv-impulse 0.9s linear infinite;
+}
+
+@keyframes tv-impulse {
+  from {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate(96px, 10px);
+    opacity: 0.2;
+  }
+}
+
+.tv-nerve-trunk {
+  fill: none;
+  stroke: #e3b21c;
+  stroke-width: 5;
+}
+
+.tv-vessel {
+  fill: none;
+  stroke: #d7262b;
+  stroke-width: 5;
+  opacity: 0.8;
+}
+
+.tv-odontoblast {
+  fill: #e7a1b6;
+  stroke: #c26d8c;
+}
+
+.tv-nucleus {
+  fill: #8e3d5c;
+}
+
+.tv-opening {
+  fill: #1e4fa3;
+}
+
+.tv-plug {
+  fill: #9ca3af;
+  stroke: #4b5563;
+}
+
+.tv-stimulus {
+  opacity: 0.85;
+}
+
+.tv-stimulus text {
+  fill: #1f2937;
+}
+
+.tv-small {
+  font-size: 13px;
+}
+
+.tv-air {
+  stroke: #4b5563;
+  stroke-width: 2;
+  fill: none;
+}
+
+.tv-sugar {
+  fill: #ffffff;
+  stroke: #9ca3af;
+}
+
+.tv-probe {
+  fill: none;
+  stroke: #6b7280;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.tv-labels text {
+  font-size: 15px;
+  font-weight: 600;
+  fill: #1f2937;
+}
+
+.tv-labels path {
+  fill: none;
+  stroke: #374151;
+  stroke-width: 1.2;
+}
+
+.tv-labels .tv-label-strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.tubules-banner {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #1f2937;
+  font-size: 14px;
+  max-width: 900px;
+}
+
+.tubules-banner--pain {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-fluid--outward,
+  .tv-fluid--inward,
+  .tv-fluid--oscillating,
+  .tv-impulse {
+    animation: none;
+  }
+}

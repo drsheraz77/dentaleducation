@@ -5,8 +5,24 @@ import { PROCEDURES, PROCEDURE_BY_ID } from '../../data/procedures';
 import { INSTRUMENTS } from '../../data/instruments';
 import { ADHESIVE_PROTOCOLS, MATERIALS, MATERIAL_BY_ID } from '../../data/materials';
 import { CASES } from '../../data/cases';
+import { STIMULI } from '../../data/dentinTubules';
 import { chosenInstrument, instrumentKey } from '../../state/selectors';
 import type { AdhesiveProtocolId, MaterialId, ProcedureId } from '../../types';
+
+function AnatomyViewSwitch() {
+  const view = useSim((st) => st.anatomyView);
+  const setView = useSim((st) => st.setAnatomyView);
+  return (
+    <div className="segmented" role="tablist" aria-label="Anatomy view">
+      <button type="button" role="tab" aria-selected={view === 'section'} onClick={() => setView('section')}>
+        Whole tooth
+      </button>
+      <button type="button" role="tab" aria-selected={view === 'tubules'} onClick={() => setView('tubules')}>
+        Dentin tubules
+      </button>
+    </div>
+  );
+}
 
 /** Topic-specific selectors shown above the 3D workspace. Every control changes the simulation state. */
 export function ModuleControls() {
@@ -14,8 +30,30 @@ export function ModuleControls() {
 
   switch (s.topic) {
     case 'anatomy':
+      if (s.anatomyView === 'tubules') {
+        return (
+          <div className="module-controls" aria-label="Dentin tubule controls">
+            <AnatomyViewSwitch />
+            <span className="control">Stimulus</span>
+            <div className="chips" role="group" aria-label="Stimulus">
+              {STIMULI.map((st, i) => (
+                <button key={st.id} type="button" className="chip" aria-pressed={s.step === i} onClick={() => s.setStep(i)}>
+                  {st.name}
+                </button>
+              ))}
+            </div>
+            <button type="button" className="chip" aria-pressed={s.dentinExposed} onClick={s.toggleDentinExposed}>
+              Gingival recession (exposed dentin)
+            </button>
+            <button type="button" className="chip" aria-pressed={s.tubulesOccluded} onClick={s.toggleTubulesOccluded}>
+              Tubules occluded (desensitiser)
+            </button>
+          </div>
+        );
+      }
       return (
         <div className="module-controls" aria-label="Anatomy controls">
+          <AnatomyViewSwitch />
           <span className="control">Select structure</span>
           <div className="chips">
             {ANATOMY_TOUR.map((id) => (

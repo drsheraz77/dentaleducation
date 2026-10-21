@@ -18,10 +18,20 @@ import { INSTRUMENTS } from '../data/instruments';
 import { CASES } from '../data/cases';
 import { QUIZ } from '../data/quiz';
 import { evaluateDiagnosis } from '../modules/diagnosis/decisionEngine';
+import { STIMULI } from '../data/dentinTubules';
 
 /** The anatomy module's longitudinal section, laid out like a textbook figure (callouts, brackets, light page). */
 export function isTextbookView(s: Pick<SimState, 'topic' | 'viewMode'>): boolean {
   return s.topic === 'anatomy' && s.viewMode === 'section';
+}
+
+/** The magnified dentin-tubule illustration replaces the 3D tooth. */
+export function isTubulesView(s: Pick<SimState, 'topic' | 'anatomyView'>): boolean {
+  return s.topic === 'anatomy' && s.anatomyView === 'tubules';
+}
+
+export function currentStimulus(s: Pick<SimState, 'step'>) {
+  return STIMULI[Math.min(s.step, STIMULI.length - 1)];
 }
 
 export const DEFAULT_VISUAL: ToothVisualState = {
@@ -171,6 +181,7 @@ export function comparisonPreparation(materialId: MaterialId, preferred: Procedu
 export function getTimeline(s: SimState): TimelineStep[] {
   switch (s.topic) {
     case 'anatomy':
+      if (s.anatomyView === 'tubules') return STIMULI.map((st) => ({ id: st.id, title: st.name }));
       return ANATOMY_TOUR.map((id) => ({ id, title: ANATOMY[id].name }));
     case 'caries':
       return CARIES_STAGES.map((c) => ({ id: c.id, title: c.shortTitle }));

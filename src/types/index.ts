@@ -29,6 +29,7 @@ export type StructureId =
   | 'bone'
   | 'gingiva'
   | 'neurovascular'
+  | 'tubules'
   | 'lesion'
   | 'biofilm'
   | 'restoration'

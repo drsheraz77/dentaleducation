@@ -142,6 +142,24 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     // Added after the 2026-10-21 content review: needs approval before release.
     verification: 'draft-needs-expert-review',
   },
+  tubules: {
+    id: 'tubules',
+    name: 'Dentinal tubules',
+    function:
+      'Microscopic fluid-filled channels running through the full thickness of dentin from the pulp towards the dentino-enamel junction and the root surface.',
+    characteristics: [
+      'In coronal dentin they follow a gentle S-shaped course; in the root they run more directly outwards.',
+      'Contain dentinal fluid and odontoblast processes; nerve fibres enter the inner part of some tubules.',
+      'Tubules are more numerous and wider near the pulp than near the outer dentin.',
+    ],
+    cariesRelevance:
+      'Tubules give acids, bacterial products and bacteria a path towards the pulp; the dentin–pulp complex responds with tubular sclerosis and tertiary dentin.',
+    clinicalRelevance:
+      'Open tubules on exposed dentin (e.g., after gingival recession or loss of cementum) underlie dentin hypersensitivity. Adhesive bonding to dentin relies on infiltrating the tubules and intertubular dentin.',
+    refs: ['nanci2018', 'fejerskov2015'],
+    // Added after the 2026-10-21 content review: needs approval before release.
+    verification: 'draft-needs-expert-review',
+  },
   lesion: {
     id: 'lesion',
     name: 'Carious lesion',

@@ -67,6 +67,22 @@ describe('application shell', () => {
   });
 });
 
+describe('dentin tubules view', () => {
+  it('switches to the magnified view and responds to stimulus and recession', async () => {
+    const user = userEvent.setup();
+    await renderApp();
+    await user.click(screen.getByRole('tab', { name: 'Dentin tubules' }));
+    expect(screen.queryByTestId('scene-probe')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cold' }));
+    const banner = screen.getAllByRole('status').find((el) => el.className.includes('tubules-banner'))!;
+    expect(banner).toHaveTextContent(/fluid moves, nerves fire/i);
+    await user.click(screen.getByRole('button', { name: /gingival recession/i }));
+    expect(banner).toHaveTextContent(/covered dentin/i);
+    await user.click(screen.getByRole('tab', { name: 'Whole tooth' }));
+    expect(screen.getByTestId('scene-probe')).toBeInTheDocument();
+  });
+});
+
 describe('caries module', () => {
   it('stage selector changes the lesion and the explanation together', async () => {
     const user = userEvent.setup();

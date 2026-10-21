@@ -36,7 +36,7 @@ describe('educational content integrity', () => {
     expect(CONTENT_REVIEW.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     // Content added after the review stays a draft until it is approved.
     const drafts = allContent.filter((c) => c.verification === 'draft-needs-expert-review').map((c) => c.id);
-    expect(drafts).toEqual(['neurovascular']);
+    expect(drafts).toEqual(['neurovascular', 'tubules']);
     allContent
       .filter((c) => !drafts.includes(c.id))
       .forEach((c) => expect(c.verification).toBe(CONTENT_REVIEW.status));

@@ -18,6 +18,73 @@ export function getNeurovascular(): NeurovascularGeometries {
   return neurovascular;
 }
 
+/**
+ * Dentinal tubules on the section plane: S-shaped lines from the pulp wall to the
+ * dentino-enamel junction (crown) or root surface (roots), found by casting rays
+ * through the dentin and pulp solids. Drawn just behind the cut (z < 0).
+ */
+let tubules: THREE.BufferGeometry | null = null;
+export function getDentinTubules(): THREE.BufferGeometry {
+  if (tubules) return tubules;
+  const g = getToothGeometries();
+  const side = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+  const mesh = (geom: THREE.BufferGeometry) => new THREE.Mesh(geom, side);
+  const pulp = mesh(g.pulp);
+  const dentin = mesh(g.dentin);
+  const canal = mesh(g.rootCanal);
+  const root = mesh(g.rootDentin);
+  const ray = new THREE.Raycaster();
+  const z = -0.04;
+  const segments: number[] = [];
+
+  /** Hit distance of the nearest surface along the ray, or null. */
+  const first = (m: THREE.Mesh, o: THREE.Vector3, d: THREE.Vector3) => {
+    ray.set(o, d);
+    return ray.intersectObject(m)[0]?.distance ?? null;
+  };
+  const addTubule = (o: THREE.Vector3, d: THREE.Vector3, inner: number, outer: number) => {
+    const a = o.clone().addScaledVector(d, inner + 0.05);
+    const b = o.clone().addScaledVector(d, outer - 0.05);
+    const len = a.distanceTo(b);
+    if (len < 0.4) return;
+    const n = new THREE.Vector3(-d.y, d.x, 0);
+    const steps = 16;
+    let prev = a.clone();
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      // Primary S-curvature of coronal tubules, scaled to the tubule's length.
+      const p = a.clone().lerp(b, t).addScaledVector(n, Math.sin(t * Math.PI * 2) * len * 0.05);
+      segments.push(prev.x, prev.y, z, p.x, p.y, z);
+      prev = p;
+    }
+  };
+
+  // Crown: rays fanning out from the centre of the pulp chamber.
+  const centre = new THREE.Vector3(0, 0.1, z);
+  for (let deg = 8; deg <= 172; deg += 3.2) {
+    const d = new THREE.Vector3(Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180), 0);
+    const inner = first(pulp, centre, d);
+    const outer = first(dentin, centre, d);
+    if (inner !== null && outer !== null && outer > inner) addTubule(centre, d, inner, outer);
+  }
+  // Roots: horizontal rays from each canal's centre line (roots tilt 0.08 rad from the root top at y = -2.4).
+  for (const sideSign of [1, -1]) {
+    for (let y = -3.4; y > -12.8; y -= 0.42) {
+      const o = new THREE.Vector3(sideSign * (2.4 + (-y - 2.4) * 0.08), y, z);
+      for (const dir of [1, -1]) {
+        const d = new THREE.Vector3(dir, 0, 0);
+        const inner = first(canal, o, d);
+        const outer = first(root, o, d);
+        if (inner !== null && outer !== null && outer > inner) addTubule(o, d, inner, outer);
+      }
+    }
+  }
+  side.dispose();
+  tubules = new THREE.BufferGeometry();
+  tubules.setAttribute('position', new THREE.Float32BufferAttribute(segments, 3));
+  return tubules;
+}
+
 /** Spongy (trabecular) bone pattern for the bone's cut face: marrow spaces on a pale matrix. */
 let boneTexture: THREE.CanvasTexture | null = null;
 export function getBoneTexture(): THREE.CanvasTexture | null {

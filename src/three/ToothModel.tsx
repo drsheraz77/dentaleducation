@@ -20,6 +20,8 @@ export interface ToothModelProps {
   speed: number;
   /** Pulse the step's highlighted structures (guided learning). */
   guided: boolean;
+  /** Textbook detail (anatomy module's section view). */
+  textbook?: boolean;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface ToothModelProps {
  * geometry is derived here from the (eased) visual state, so every UI control that
  * changes the state produces a matching change in the 3D scene.
  */
-export function ToothModel({ visual, section, showSupport, selected, speed, guided }: ToothModelProps) {
+export function ToothModel({ visual, section, showSupport, selected, speed, guided, textbook = false }: ToothModelProps) {
   const geoms = getToothGeometries();
   const { lesion } = useEasedLesion(visual.lesion, speed);
   const { cavity, cutting } = useEasedCavity(visual.cavity, speed);
@@ -116,6 +118,7 @@ export function ToothModel({ visual, section, showSupport, selected, speed, guid
         pulpInflammation={lesion?.pulpInflammation ?? 0}
         highlightOf={highlightOf}
         uniforms={uniforms}
+        textbook={textbook}
       />
       <CariesLayer
         lesion={lesion}

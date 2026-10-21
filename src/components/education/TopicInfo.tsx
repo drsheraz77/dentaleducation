@@ -2,8 +2,54 @@ import { useSim } from '../../state/store';
 import { ANATOMY, ANATOMY_TOUR } from '../../data/anatomy';
 import { CARIES_STAGES, CLASSIFICATION_EXAMPLES, ICDAS_CODES } from '../../data/cariesStages';
 import { BulletList, References, Section, SelectedStructureCard } from './common';
+import { currentStimulus } from '../../state/selectors';
+import { HYDRODYNAMIC_SUMMARY, TUBULES_REFS, TUBULES_VERIFICATION, tubuleResponse } from '../../data/dentinTubules';
+
+function TubulesInfo() {
+  const s = useSim();
+  const stimulus = currentStimulus(s);
+  const response = tubuleResponse(stimulus, s.dentinExposed, s.tubulesOccluded);
+  return (
+    <div>
+      <div className="eyebrow">Dental anatomy · magnified dentin</div>
+      <h2>Dentinal tubules and sensitivity</h2>
+      {s.selectedStructure && <SelectedStructureCard id={s.selectedStructure} />}
+      <div className="card" aria-live="polite">
+        <div className="eyebrow">{stimulus.name}</div>
+        <strong>{response.headline}</strong>
+        <p style={{ margin: '6px 0 0' }}>{response.detail}</p>
+      </div>
+      <Section title="What is happening?">
+        <p>
+          Dentin is crossed by fluid-filled tubules running from the pulp outwards. Odontoblast processes and nerve fibres occupy their inner part.
+          When dentin is exposed and the tubules are open, stimuli move the tubular fluid.
+        </p>
+      </Section>
+      <Section title="Why does it matter? (hydrodynamic theory)">
+        <BulletList items={HYDRODYNAMIC_SUMMARY} />
+      </Section>
+      <Section title="Try it">
+        <BulletList
+          items={[
+            'Pick a stimulus, or press Play to step through them.',
+            'Turn off gingival recession: covered tubules do not respond.',
+            'Turn on "Tubules occluded" to see how occluding desensitisers reduce fluid movement.',
+          ]}
+        />
+      </Section>
+      <p className="callout">Schematic and not to scale: real tubules are about 1–3 µm wide and number tens of thousands per mm².</p>
+      <References ids={TUBULES_REFS} verification={TUBULES_VERIFICATION} />
+    </div>
+  );
+}
 
 export function AnatomyInfo() {
+  const view = useSim((s) => s.anatomyView);
+  if (view === 'tubules') return <TubulesInfo />;
+  return <AnatomySectionInfo />;
+}
+
+function AnatomySectionInfo() {
   const selected = useSim((s) => s.selectedStructure);
   const select = useSim((s) => s.selectStructure);
   const pathology = useSim((s) => s.pathology);

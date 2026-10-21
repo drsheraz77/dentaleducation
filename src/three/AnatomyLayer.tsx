@@ -4,7 +4,7 @@ import type { CutSurfaceFinish, StructureId } from '../types';
 import type { ToothGeometries } from './geometry/anatomy';
 import type { CutResult } from './geometry/cavity';
 import { SectionMesh } from './CrossSectionView';
-import { getBoneTexture, getNeurovascular } from './geometry/toothSingleton';
+import { getBoneTexture, getDentinTubules, getNeurovascular } from './geometry/toothSingleton';
 import { TISSUE_COLORS, cutSurfaceParams, makeTissueMaterial, useDisposable, type LesionUniforms } from './materials';
 
 export interface AnatomyLayerProps {
@@ -19,6 +19,8 @@ export interface AnatomyLayerProps {
   pulpInflammation: number;
   highlightOf: (id: StructureId) => number;
   uniforms: LesionUniforms;
+  /** Textbook detail on the cut face (dentinal tubules). */
+  textbook?: boolean;
 }
 
 /** Normal tissues of the tooth and periodontium. */
@@ -95,6 +97,7 @@ export function AnatomyLayer(p: AnatomyLayerProps) {
         </>
       )}
       {section && <Neurovascular highlight={highlightOf('neurovascular')} />}
+      {section && p.textbook && <DentinTubules highlight={highlightOf('tubules')} />}
     </group>
   );
 }
@@ -109,6 +112,16 @@ const CAP = {
   bone: '#efd2b0',
   gingiva: '#ea8d99',
 };
+
+/** Fine S-shaped tubules across the dentin of the cut face; clicks pass through to the dentin. */
+function DentinTubules({ highlight }: { highlight: number }) {
+  const mat = useDisposable(() => new THREE.LineBasicMaterial({ color: '#b98455', transparent: true, opacity: 0.5, toneMapped: false }), []);
+  useEffect(() => {
+    mat.color.set(highlight > 0 ? '#2563eb' : '#b98455');
+    mat.opacity = highlight > 0 ? 0.8 : 0.5;
+  }, [highlight, mat]);
+  return <lineSegments geometry={getDentinTubules()} material={mat} raycast={() => null} dispose={null} />;
+}
 
 /** Arteries (red), veins (blue) and nerve (yellow) entering at the apices; shown on the section only. */
 function Neurovascular({ highlight }: { highlight: number }) {
