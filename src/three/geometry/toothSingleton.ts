@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildToothGeometries, type ToothGeometries } from './anatomy';
+import { buildNeurovascular, buildToothGeometries, type NeurovascularGeometries, type ToothGeometries } from './anatomy';
 import { smoothstep } from './revolve';
 
 /**
@@ -10,6 +10,50 @@ let tooth: ToothGeometries | null = null;
 export function getToothGeometries(): ToothGeometries {
   tooth ??= buildToothGeometries();
   return tooth;
+}
+
+let neurovascular: NeurovascularGeometries | null = null;
+export function getNeurovascular(): NeurovascularGeometries {
+  neurovascular ??= buildNeurovascular();
+  return neurovascular;
+}
+
+/** Spongy (trabecular) bone pattern for the bone's cut face: marrow spaces on a pale matrix. */
+let boneTexture: THREE.CanvasTexture | null = null;
+export function getBoneTexture(): THREE.CanvasTexture | null {
+  if (boneTexture) return boneTexture;
+  if (typeof document === 'undefined') return null;
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.fillStyle = '#f1d7b8';
+  ctx.fillRect(0, 0, size, size);
+  const rand = mulberry32(42);
+  for (let i = 0; i < 70; i++) {
+    const x = rand() * size;
+    const y = rand() * size;
+    const rx = 4 + rand() * 8;
+    const ry = 3 + rand() * 5;
+    const rot = rand() * Math.PI;
+    // Draw wrapped copies so the texture tiles without seams.
+    for (const dx of [-size, 0, size]) {
+      for (const dy of [-size, 0, size]) {
+        ctx.beginPath();
+        ctx.ellipse(x + dx, y + dy, rx, ry, rot, 0, Math.PI * 2);
+        ctx.fillStyle = '#b8574a';
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#8a3a31';
+        ctx.stroke();
+      }
+    }
+  }
+  boneTexture = new THREE.CanvasTexture(canvas);
+  boneTexture.wrapS = boneTexture.wrapT = THREE.RepeatWrapping;
+  boneTexture.colorSpace = THREE.SRGBColorSpace;
+  return boneTexture;
 }
 
 export interface BiofilmData {

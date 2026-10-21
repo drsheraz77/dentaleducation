@@ -26,6 +26,8 @@ export interface SectionMeshProps {
   renderOrder?: number;
   /** Disable the cap (e.g. thin transparent overlays). */
   cap?: boolean;
+  /** Optional texture for the cut face (UVs in world x/y), e.g. trabecular bone. */
+  capMap?: THREE.Texture | null;
 }
 
 export function applyClipping(materials: THREE.Material[], section: boolean, extra: THREE.Plane[] = []) {
@@ -50,16 +52,21 @@ export function SectionMesh({
   pickable = true,
   renderOrder,
   cap = true,
+  capMap = null,
 }: SectionMeshProps) {
   const capMaterial = useMemo(
-    () => new THREE.MeshBasicMaterial({ side: THREE.BackSide, clippingPlanes: [SECTION_PLANE] }),
+    () => new THREE.MeshBasicMaterial({ side: THREE.BackSide, clippingPlanes: [SECTION_PLANE], toneMapped: false }),
     [],
   );
   useEffect(() => () => capMaterial.dispose(), [capMaterial]);
 
   useEffect(() => {
     capMaterial.color.set(capColor).lerp(HIGHLIGHT, highlight * 0.45);
-  }, [capMaterial, capColor, highlight]);
+    if (capMaterial.map !== capMap) {
+      capMaterial.map = capMap;
+      capMaterial.needsUpdate = true;
+    }
+  }, [capMaterial, capColor, highlight, capMap]);
 
   useEffect(() => {
     const mats = Array.isArray(material) ? material : [material];

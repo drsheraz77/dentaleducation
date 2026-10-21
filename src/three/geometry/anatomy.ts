@@ -59,7 +59,7 @@ export function pulpHornField(x: number, z: number, y: number): number {
   const w = smoothstep(0.3, 1.2, y);
   if (w === 0) return 0;
   let h = 0;
-  for (const [cx, cz] of CUSPS) h += 1.0 * gaussian(x, z, cx * 0.83, cz * 0.75, 0.9);
+  for (const [cx, cz] of CUSPS) h += 1.0 * gaussian(x, z, cx * 0.83, cz * 0.5, 0.9);
   return h * w;
 }
 
@@ -302,8 +302,8 @@ export function buildToothGeometries(): ToothGeometries {
   });
   const rootPdl = pairOfRoots(rootProfile(0.4, -3.4));
 
-  const bone = revolve({ ...base, profile: boneProfile(TOOTH.boneCrestY), spacing: 0.5 });
-  const boneRecession = revolve({ ...base, profile: boneProfile(TOOTH.boneCrestY - 2.5), spacing: 0.5 });
+  const bone = planarUV(revolve({ ...base, profile: boneProfile(TOOTH.boneCrestY), spacing: 0.5 }), 0.14);
+  const boneRecession = planarUV(revolve({ ...base, profile: boneProfile(TOOTH.boneCrestY - 2.5), spacing: 0.5 }), 0.14);
   const gingiva = revolve({ ...base, profile: gingivaProfile(1.0, TOOTH.boneCrestY + 0.02), spacing: 0.2 });
   const gingivaRecession = revolve({
     ...base,
@@ -327,6 +327,69 @@ export function buildToothGeometries(): ToothGeometries {
     gingivaRecession,
     boneRecession,
   };
+}
+
+/** UVs from world x/y, so a texture on the section cut face is not distorted (bone trabeculae). */
+function planarUV(g: THREE.BufferGeometry, scale: number): THREE.BufferGeometry {
+  const pos = g.getAttribute('position');
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = pos.getX(i) * scale;
+    uv[i * 2 + 1] = pos.getY(i) * scale;
+  }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+
+/** A point on a root canal's centre line: same transform as pairOfRoots() (rotation about the root top). */
+function canalCentre(side: 1 | -1, localY: number): THREE.Vector2 {
+  const x0 = side === 1 ? TOOTH.mesialRootX : TOOTH.distalRootX;
+  const tilt = side * TOOTH.rootTilt;
+  const dy = localY + 2.4;
+  return new THREE.Vector2(x0 - dy * Math.sin(tilt), dy * Math.cos(tilt) - 2.4);
+}
+
+export interface NeurovascularGeometries {
+  artery: THREE.BufferGeometry;
+  vein: THREE.BufferGeometry;
+  nerve: THREE.BufferGeometry;
+}
+
+/**
+ * Schematic neurovascular bundle, as drawn in textbook sections: vessels and a nerve
+ * enter each apical foramen, run up the canals and loop through the pulp chamber.
+ * Placed just behind the section plane (z < 0) so it shows on the cut face.
+ */
+export function buildNeurovascular(): NeurovascularGeometries {
+  const half = (side: 1 | -1) => [
+    canalCentre(side, -16.2),
+    canalCentre(side, -14.6),
+    canalCentre(side, -13.6),
+    canalCentre(side, -10),
+    canalCentre(side, -6),
+    canalCentre(side, -3),
+    canalCentre(side, -1.6),
+    new THREE.Vector2(side * 2.15, -0.6),
+    new THREE.Vector2(side * 1.95, 0.45),
+    new THREE.Vector2(side * 1.55, 1.05),
+    new THREE.Vector2(side * 0.8, 0.95),
+  ];
+  const centre = [...half(1), new THREE.Vector2(0, 0.9), ...half(-1).reverse()];
+  const spine = new THREE.SplineCurve(centre);
+  const samples = spine.getSpacedPoints(220);
+
+  const tube = (offset: number, z: number, radius: number) => {
+    const pts = samples.map((p, i) => {
+      const t = spine.getTangentAt(i / (samples.length - 1));
+      // Offset sideways from the centre line; narrower near the apices where the canal is thin.
+      const narrow = p.y < -11 ? 0.55 : 1;
+      return new THREE.Vector3(p.x - t.y * offset * narrow, p.y + t.x * offset * narrow, z);
+    });
+    const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 400, radius, 8, false);
+    g.deleteAttribute('uv');
+    return g;
+  };
+  return { artery: tube(0.17, -0.25, 0.1), vein: tube(-0.17, -0.3, 0.11), nerve: tube(0, -0.4, 0.07) };
 }
 
 export function disposeToothGeometries(g: ToothGeometries): void {

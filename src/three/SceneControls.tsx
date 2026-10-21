@@ -18,7 +18,10 @@ export const CAMERA_PRESETS: Record<CameraPreset | 'compare', { position: [numbe
   mesial: { position: [26, 9, 12], target: [2.5, 2.5, 0] },
   /** Crown cross-section, looking at the cut face. */
   section: { position: [0, 4, 30], target: [0, 2.2, 0] },
-  sectionFull: { position: [0, -2, 52], target: [0, -3.5, 0] },
+  /** Whole-tooth section, shifted left to leave room for the textbook label column. */
+  sectionFull: { position: [4.5, -3, 52], target: [4.5, -3.6, 0] },
+  /** Same view centred, for screens too narrow for a label column. */
+  sectionCentered: { position: [0, -3, 60], target: [0, -3.6, 0] },
   root: { position: [14, -4, 38], target: [0, -5, 0] },
   compare: { position: [0, 30, 36], target: [0, 3, 0] },
 };

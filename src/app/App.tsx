@@ -7,7 +7,7 @@ import { SceneToolbar } from '../components/controls/SceneToolbar';
 import { Timeline } from '../components/controls/Timeline';
 import { QuizPanel } from '../components/assessment/QuizPanel';
 import { useSim } from '../state/store';
-import { deriveScene, getTimeline } from '../state/selectors';
+import { deriveScene, getTimeline, isTextbookView } from '../state/selectors';
 import { TISSUE_COLORS } from '../three/colors';
 
 // three.js, React Three Fiber and the CSG engine are loaded on demand so the UI shell appears immediately.
@@ -51,7 +51,9 @@ function GuidedBanner() {
 
 function Legend() {
   const section = useSim((s) => s.viewMode === 'section');
-  if (!section) return null;
+  const textbook = useSim(isTextbookView);
+  // The textbook view names every tissue with callouts, so the colour key is redundant there.
+  if (!section || textbook) return null;
   const items: [string, string][] = [
     ['Enamel', TISSUE_COLORS.enamel],
     ['Dentin', TISSUE_COLORS.dentin],
@@ -86,6 +88,7 @@ function Notice() {
 
 export default function App() {
   const topic = useSim((s) => s.topic);
+  const textbook = useSim(isTextbookView);
   useGuidedViewSync();
   const show3D = topic !== 'quiz';
   return (
@@ -96,7 +99,7 @@ export default function App() {
         <main className="workspace" aria-label="Workspace">
           <ModuleControls />
           {show3D ? (
-            <div className="viewport">
+            <div className={textbook ? 'viewport viewport--textbook' : 'viewport'}>
               <Suspense fallback={<SceneLoading />}>
                 <ToothScene />
               </Suspense>

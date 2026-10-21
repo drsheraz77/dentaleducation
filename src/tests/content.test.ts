@@ -30,11 +30,16 @@ describe('educational content integrity', () => {
     expect(new Set(REFERENCES.map((r) => r.id)).size).toBe(REFERENCES.length);
   });
 
-  it('marks all content as expert-reviewed, matching the review record', () => {
+  it('marks reviewed content as expert-reviewed and only known new items as drafts', () => {
     expect(CONTENT_REVIEW.status).toBe('expert-reviewed');
     expect(CONTENT_REVIEW.reviewer).not.toBe('');
     expect(CONTENT_REVIEW.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    allContent.forEach((c) => expect(c.verification).toBe(CONTENT_REVIEW.status));
+    // Content added after the review stays a draft until it is approved.
+    const drafts = allContent.filter((c) => c.verification === 'draft-needs-expert-review').map((c) => c.id);
+    expect(drafts).toEqual(['neurovascular']);
+    allContent
+      .filter((c) => !drafts.includes(c.id))
+      .forEach((c) => expect(c.verification).toBe(CONTENT_REVIEW.status));
   });
 
   it('defines objectives, prerequisites, steps, visual state, limitations and references for each procedure', () => {

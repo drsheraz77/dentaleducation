@@ -16,7 +16,7 @@ export type TopicId =
 
 export type LearningMode = 'guided' | 'explore' | 'case';
 export type ViewMode = 'external' | 'section';
-export type CameraPreset = 'default' | 'full' | 'working' | 'occlusal' | 'buccal' | 'mesial' | 'section' | 'sectionFull' | 'root';
+export type CameraPreset = 'default' | 'full' | 'working' | 'occlusal' | 'buccal' | 'mesial' | 'section' | 'sectionFull' | 'sectionCentered' | 'root';
 
 export type StructureId =
   | 'enamel'
@@ -28,6 +28,7 @@ export type StructureId =
   | 'pdl'
   | 'bone'
   | 'gingiva'
+  | 'neurovascular'
   | 'lesion'
   | 'biofilm'
   | 'restoration'

@@ -125,6 +125,23 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     refs: ['nanci2018', 'sturdevant2019'],
     verification: REVIEWED,
   },
+  neurovascular: {
+    id: 'neurovascular',
+    name: 'Nerve and blood supply',
+    function:
+      'Blood vessels and nerves enter and leave the pulp through the apical foramen (and any accessory canals), supplying the pulp and carrying sensation.',
+    characteristics: [
+      'Arterioles (red) and venules (blue) run with sensory nerve fibres (yellow) through each root canal into the pulp chamber.',
+      'Drawn schematically, as in textbook illustrations; real pulpal vasculature forms a fine capillary network.',
+    ],
+    cariesRelevance:
+      'As a lesion approaches the pulp, pulpal blood flow and nerve activity change; inflammation within the rigid pulp chamber can cause pain.',
+    clinicalRelevance:
+      'Pulp sensibility tests (e.g., cold testing) assess the nerve response, not the blood supply directly. Interrupted blood supply leads to pulp necrosis.',
+    refs: ['nanci2018', 'nelson2020'],
+    // Added after the 2026-10-21 content review: needs approval before release.
+    verification: 'draft-needs-expert-review',
+  },
   lesion: {
     id: 'lesion',
     name: 'Carious lesion',
@@ -171,4 +188,4 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
   },
 };
 
-export const ANATOMY_TOUR: StructureId[] = ['enamel', 'dentin', 'pulp', 'rootCanal', 'cementum', 'pdl', 'bone', 'gingiva'];
+export const ANATOMY_TOUR: StructureId[] = ['enamel', 'dentin', 'pulp', 'rootCanal', 'neurovascular', 'cementum', 'pdl', 'bone', 'gingiva'];

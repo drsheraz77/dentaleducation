@@ -19,6 +19,11 @@ import { CASES } from '../data/cases';
 import { QUIZ } from '../data/quiz';
 import { evaluateDiagnosis } from '../modules/diagnosis/decisionEngine';
 
+/** The anatomy module's longitudinal section, laid out like a textbook figure (callouts, brackets, light page). */
+export function isTextbookView(s: Pick<SimState, 'topic' | 'viewMode'>): boolean {
+  return s.topic === 'anatomy' && s.viewMode === 'section';
+}
+
 export const DEFAULT_VISUAL: ToothVisualState = {
   biofilm: 0,
   acidChallenge: false,

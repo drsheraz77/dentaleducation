@@ -103,7 +103,8 @@ export type Store = SimState & SimActions;
 export const initialState: SimState = {
   topic: 'anatomy',
   mode: 'explore',
-  viewMode: 'external',
+  // Anatomy opens on the textbook-style longitudinal section.
+  viewMode: 'section',
   showLabels: true,
   showSupport: true,
   pathology: false,
@@ -147,7 +148,7 @@ export const useSim = create<Store>()((set, get) => ({
       selectedStructure: null,
       compareBeforeAfter: false,
       mode: topic === 'cases' ? 'case' : s.mode === 'case' ? 'explore' : s.mode,
-      viewMode: topic === 'caries' || topic === 'classification' ? 'section' : s.viewMode,
+      viewMode: topic === 'caries' || topic === 'classification' || topic === 'anatomy' ? 'section' : s.viewMode,
       cameraResetToken: s.cameraResetToken + 1,
     })),
   setMode: (mode) =>

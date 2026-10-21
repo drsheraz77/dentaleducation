@@ -190,7 +190,8 @@ await check('7. Animation controls (play, pause, next, previous, reset)', async 
   await page.getByRole('button', { name: /reset to first step/i }).click();
   await page.locator('select[aria-label="Animation speed"]').selectOption('2');
   await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await page.waitForTimeout(4200);
+  // Two steps at 2× take ~3.6 s; allow extra time because software WebGL can stall the page.
+  await page.waitForFunction(() => window.__dentalverse.store.getState().step >= 2, null, { timeout: 15000 }).catch(() => {});
   const playing = await store('[st.step, st.playing]');
   assert(playing[0] >= 2 && playing[1], `after playback step=${playing[0]} playing=${playing[1]}`);
   await page.getByRole('button', { name: 'Pause' }).click();

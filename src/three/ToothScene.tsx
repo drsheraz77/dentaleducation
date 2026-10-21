@@ -3,9 +3,9 @@ import { Component, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { useSim } from '../state/store';
-import { deriveScene, type SceneDescription } from '../state/selectors';
+import { deriveScene, isTextbookView, type SceneDescription } from '../state/selectors';
 import type { SimState } from '../state/store';
-import { LabelOverlay, LabelProjector, structureAnchors, type LabelAnchor } from './AnatomyLabels';
+import { LabelOverlay, LabelProjector, structureAnchors, textbookAnchors, type LabelAnchor } from './AnatomyLabels';
 import type { StructureId } from '../types';
 import { ToothModel } from './ToothModel';
 import { CameraRig, DebugBridge } from './SceneControls';
@@ -70,12 +70,13 @@ const TOOTH_SPACING = 17;
 const toothOffset = (i: number, n: number) => (n > 1 ? (i - (n - 1) / 2) * TOOTH_SPACING : 0);
 
 /** Labels for a single tooth, or captions when two teeth are compared side by side. */
-export function sceneAnchors(scene: SceneDescription, s: Pick<SimState, 'viewMode' | 'showSupport' | 'showLabels'>): LabelAnchor[] {
+export function sceneAnchors(scene: SceneDescription, s: Pick<SimState, 'viewMode' | 'showSupport' | 'showLabels' | 'topic'>): LabelAnchor[] {
   const n = scene.teeth.length;
   if (n > 1) {
     return scene.teeth.map((t, i) => ({ key: `caption-${i}-${t.caption}`, text: t.caption ?? '', pos: [toothOffset(i, n), 10.5, 0], kind: 'caption' }));
   }
   if (!s.showLabels || n === 0) return [];
+  if (isTextbookView(s)) return textbookAnchors(scene.teeth[0].visual, s.showSupport);
   return structureAnchors(scene.teeth[0].visual, s.viewMode === 'section', s.showSupport);
 }
 
@@ -90,11 +91,22 @@ function SceneContent({ scene, anchors }: { scene: SceneDescription; anchors: La
   // Anatomy frames the whole tooth; the other modules focus on the crown, where the lesions are.
   const whole = state.topic === 'anatomy';
   const operative = state.topic === 'preparation' || state.topic === 'materials';
-  const fallback = section ? (whole ? 'sectionFull' : 'section') : whole ? 'full' : operative ? 'working' : 'default';
+  const narrow = useThree((st) => st.size.width) < 560;
+  const fallback = section
+    ? whole
+      ? narrow
+        ? 'sectionCentered'
+        : 'sectionFull'
+      : 'section'
+    : whole
+      ? 'full'
+      : operative
+        ? 'working'
+        : 'default';
   const preset = compare ? 'compare' : guided ? (primary?.camera ?? fallback) : fallback;
   const token = guided
     ? `${state.topic}:${state.step}:${state.cameraResetToken}:${state.viewMode}`
-    : `${state.topic}:${state.cameraResetToken}:${compare}:${state.viewMode}`;
+    : `${state.topic}:${state.cameraResetToken}:${compare}:${state.viewMode}:${narrow}`;
 
   const onPick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();

@@ -54,6 +54,10 @@ describe('application shell', () => {
   it('toggles cross-section, labels and pathology from the toolbar', async () => {
     const user = userEvent.setup();
     await renderApp();
+    // Anatomy opens on the textbook longitudinal section; the toolbar toggles it off and on.
+    expect(useSim.getState().viewMode).toBe('section');
+    await user.click(screen.getByRole('button', { name: /cross-section/i }));
+    expect(useSim.getState().viewMode).toBe('external');
     await user.click(screen.getByRole('button', { name: /cross-section/i }));
     expect(useSim.getState().viewMode).toBe('section');
     await user.click(screen.getByRole('button', { name: /labels/i }));
