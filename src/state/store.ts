@@ -16,6 +16,8 @@ import { ANATOMY_TOUR } from '../data/anatomy';
 import { CASES } from '../data/cases';
 import { QUIZ } from '../data/quiz';
 import { getTimeline } from './selectors';
+import { COMPARABLE_STAGES, DEFAULT_COMPARE, LESSON_STAGES, type ComparableStage } from '../data/studio/cariesLesson';
+import { LOWER_MOLAR_47, type LayerId } from '../data/studio/assets';
 
 export type MaterialsTab = 'workflow' | 'compare';
 export type AnatomyView = 'section' | 'tubules';
@@ -65,6 +67,13 @@ export interface SimState {
   caseAnswers: Record<string, number>;
 
   quiz: QuizState;
+
+  /** Caries Learning Studio */
+  studioLayers: Record<LayerId, boolean>;
+  showLesionOverlay: boolean;
+  autoRotate: boolean;
+  studioCompare: ComparableStage[];
+  studioAnswers: Record<string, number>;
 }
 
 export interface SimActions {
@@ -106,6 +115,13 @@ export interface SimActions {
   answerQuiz: (option: number) => void;
   nextQuestion: () => void;
   restartQuiz: () => void;
+
+  toggleStudioLayer: (id: LayerId) => void;
+  toggleLesionOverlay: () => void;
+  toggleAutoRotate: () => void;
+  toggleCompareStage: (id: ComparableStage) => void;
+  answerStudio: (questionId: string, option: number) => void;
+  resetStudioAnswers: () => void;
 }
 
 export type Store = SimState & SimActions;
@@ -139,6 +155,11 @@ export const initialState: SimState = {
   caseIndex: 0,
   caseAnswers: {},
   quiz: { index: 0, answers: QUIZ.map(() => null), finished: false },
+  studioLayers: Object.fromEntries(LOWER_MOLAR_47.layers.map((l) => [l.id, l.defaultVisible])) as Record<LayerId, boolean>,
+  showLesionOverlay: true,
+  autoRotate: false,
+  studioCompare: [...DEFAULT_COMPARE],
+  studioAnswers: {},
 };
 
 const clampStep = (s: SimState, step: number) => {
@@ -147,8 +168,12 @@ const clampStep = (s: SimState, step: number) => {
 };
 
 /** Side effects of landing on a step (anatomy tour selects the structure it describes). */
-const stepPatch = (s: SimState, step: number): Partial<SimState> =>
-  s.topic === 'anatomy' && s.anatomyView === 'section' ? { step, selectedStructure: ANATOMY_TOUR[step] ?? null } : { step };
+const stepPatch = (s: SimState, step: number): Partial<SimState> => {
+  if (s.topic === 'anatomy' && s.anatomyView === 'section') return { step, selectedStructure: ANATOMY_TOUR[step] ?? null };
+  // Each studio stage opens in its own default view; the learner can still switch afterwards.
+  if (s.topic === 'studio') return { step, viewMode: LESSON_STAGES[step]?.section ? 'section' : 'external' };
+  return { step };
+};
 
 export const useSim = create<Store>()((set, get) => ({
   ...initialState,
@@ -161,7 +186,14 @@ export const useSim = create<Store>()((set, get) => ({
       selectedStructure: null,
       compareBeforeAfter: false,
       mode: topic === 'cases' ? 'case' : s.mode === 'case' ? 'explore' : s.mode,
-      viewMode: topic === 'caries' || topic === 'classification' || topic === 'anatomy' ? 'section' : s.viewMode,
+      viewMode:
+        topic === 'studio'
+          ? LESSON_STAGES[0].section
+            ? 'section'
+            : 'external'
+          : topic === 'caries' || topic === 'classification' || topic === 'anatomy'
+            ? 'section'
+            : s.viewMode,
       cameraResetToken: s.cameraResetToken + 1,
     })),
   setMode: (mode) =>
@@ -238,4 +270,19 @@ export const useSim = create<Store>()((set, get) => ({
       return { quiz: { ...s.quiz, index: last ? s.quiz.index : s.quiz.index + 1, finished: last } };
     }),
   restartQuiz: () => set({ quiz: { index: 0, answers: QUIZ.map(() => null), finished: false } }),
+
+  toggleStudioLayer: (id) => set((s) => ({ studioLayers: { ...s.studioLayers, [id]: !s.studioLayers[id] } })),
+  toggleLesionOverlay: () => set((s) => ({ showLesionOverlay: !s.showLesionOverlay })),
+  toggleAutoRotate: () => set((s) => ({ autoRotate: !s.autoRotate })),
+  toggleCompareStage: (id) =>
+    set((s) => {
+      const on = s.studioCompare.includes(id);
+      // Keep at least two stages to compare.
+      if (on && s.studioCompare.length <= 2) return {};
+      const next = on ? s.studioCompare.filter((x) => x !== id) : [...s.studioCompare, id];
+      return { studioCompare: [...next].sort((a, b) => COMPARABLE_STAGES.indexOf(a) - COMPARABLE_STAGES.indexOf(b)) };
+    }),
+  answerStudio: (questionId, option) =>
+    set((s) => (questionId in s.studioAnswers ? {} : { studioAnswers: { ...s.studioAnswers, [questionId]: option } })),
+  resetStudioAnswers: () => set({ studioAnswers: {} }),
 }));

@@ -4,7 +4,7 @@ import type { VerificationStatus } from '../types';
  * Record of the scientific content review. All content in src/data was approved
  * section by section in the "DentalVerse 3D — Scientific Content Review" document.
  * Content changed after this date must be re-reviewed: set its `verification`
- * back to 'draft-needs-expert-review' until it is approved again.
+ * back to 'draft_pending_review' until it is approved again.
  */
 export const CONTENT_REVIEW = {
   status: 'expert-reviewed' as VerificationStatus,

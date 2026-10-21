@@ -27,24 +27,34 @@ export const CAMERA_PRESETS: Record<CameraPreset | 'compare', { position: [numbe
 };
 
 const TRANSITION_MS = 700;
+/** Turntable speed: one turn every 24 s, independent of frame rate. */
+const AUTO_ROTATE_RAD_PER_S = (2 * Math.PI) / 24;
+const UP = new THREE.Vector3(0, 1, 0);
+
+export type PresetTable = Record<string, { position: [number, number, number]; target: [number, number, number] }>;
 
 export interface CameraRigProps {
-  preset: CameraPreset | 'compare';
+  preset: string;
   /** Changing this value re-applies the preset (reset button, guided step change). */
   token: string;
+  /** Preset table; defaults to the procedural tooth's presets. */
+  presets?: PresetTable;
+  /** Slow turntable rotation (stops while the user drags). */
+  autoRotate?: boolean;
 }
 
 /** OrbitControls plus smooth transitions to named camera presets. */
-export function CameraRig({ preset, token }: CameraRigProps) {
+export function CameraRig({ preset, token, presets = CAMERA_PRESETS, autoRotate = false }: CameraRigProps) {
   const controls = useRef<OrbitControlsImpl>(null);
   const camera = useThree((s) => s.camera);
   const invalidate = useThree((s) => s.invalidate);
   const anim = useRef<{ fromP: THREE.Vector3; fromT: THREE.Vector3; toP: THREE.Vector3; toT: THREE.Vector3; start: number } | null>(null);
+  const dragging = useRef(false);
 
   useEffect(() => {
     const c = controls.current;
     if (!c) return;
-    const p = CAMERA_PRESETS[preset];
+    const p = presets[preset] ?? presets.default;
     // Drop any leftover damping momentum from user interaction, or it would keep
     // rotating the camera after the transition finishes.
     c.enableDamping = false;
@@ -57,11 +67,23 @@ export function CameraRig({ preset, token }: CameraRigProps) {
       start: performance.now(),
     };
     invalidate();
-  }, [preset, token, camera, invalidate]);
+  }, [preset, token, camera, invalidate, presets]);
 
-  useFrame(() => {
+  // Rendering is on demand: start the frame loop that drives the turntable.
+  useEffect(() => {
+    if (autoRotate) invalidate();
+  }, [autoRotate, invalidate]);
+
+  useFrame((_, delta) => {
     const a = anim.current;
     const c = controls.current;
+    if (c && autoRotate && !a && !dragging.current) {
+      // Time-based turntable about the target (the first delta after idle can be large: cap it).
+      const offset = camera.position.clone().sub(c.target).applyAxisAngle(UP, Math.min(delta, 0.05) * AUTO_ROTATE_RAD_PER_S);
+      camera.position.copy(c.target).add(offset);
+      c.update();
+      invalidate(); // demand rendering: keep the loop going
+    }
     if (!a || !c) return;
     // Wall-clock based so the transition takes the same time on slow devices.
     const t = Math.min(1, (performance.now() - a.start) / TRANSITION_MS);
@@ -86,23 +108,32 @@ export function CameraRig({ preset, token }: CameraRigProps) {
       maxDistance={80}
       onStart={() => {
         anim.current = null; // user takes over
+        dragging.current = true;
         if (controls.current) controls.current.enableDamping = true;
+      }}
+      onEnd={() => {
+        dragging.current = false;
+        if (autoRotate) invalidate();
       }}
     />
   );
 }
 
+/** The test bridge (window.__dentalverse) exists only on the dev server or with `?e2e`. */
+export const testBridgeEnabled = () => import.meta.env.DEV || new URLSearchParams(window.location.search).has('e2e');
+
 /**
  * Test/debug hook (dev server, or any build opened with `?e2e`): exposes the store,
  * the camera and a world→screen projection for the end-to-end acceptance tests.
  */
+
 export function DebugBridge() {
   const camera = useThree((s) => s.camera);
   const gl = useThree((s) => s.gl);
   const invalidate = useThree((s) => s.invalidate);
   const controls = useThree((s) => s.controls) as unknown as OrbitControlsImpl | null;
   useEffect(() => {
-    if (!(import.meta.env.DEV || new URLSearchParams(window.location.search).has('e2e'))) return;
+    if (!testBridgeEnabled()) return;
     const w = window as unknown as Record<string, unknown>;
     w.__dentalverse = {
       store: useSim,

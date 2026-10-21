@@ -58,12 +58,12 @@ const shot = async (name) => {
     return out;
   });
 };
-/** Fraction of sampled pixels whose colour changed noticeably (> 24 levels in any channel). */
-const differs = (a, b) => {
+/** Fraction of sampled pixels whose colour changed noticeably (> `level` levels in any channel, default 24). */
+const differs = (a, b, level = 24) => {
   if (a.length !== b.length) return 1;
   let d = 0;
   for (let i = 0; i < a.length; i += 3) {
-    if (Math.abs(a[i] - b[i]) > 24 || Math.abs(a[i + 1] - b[i + 1]) > 24 || Math.abs(a[i + 2] - b[i + 2]) > 24) d++;
+    if (Math.abs(a[i] - b[i]) > level || Math.abs(a[i + 1] - b[i + 1]) > level || Math.abs(a[i + 2] - b[i + 2]) > level) d++;
   }
   return d / (a.length / 3);
 };
@@ -323,12 +323,256 @@ await check('14. Layout remains usable on smaller screens', async () => {
   return `phone canvas ${Math.round(canvas.width)}×${Math.round(canvas.height)}, no horizontal scroll`;
 });
 
+// ---------- Caries Learning Studio (scanned tooth) ----------
+const studioAnchor = (kind, id) => page.evaluate(([k, i]) => window.__dentalverseStudio?.[k]?.[i] ?? null, [kind, id]);
+const camPos = () => page.evaluate(() => window.__dentalverse.camera().position);
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const overlayText = () => page.locator('.label-layer').innerText();
+const timings = {};
+
+await check('S1. Studio loads the scanned tooth model (local GLB, no third-party requests)', async () => {
+  const external = [];
+  page.on('request', (r) => {
+    const u = new globalThis.URL(r.url());
+    if (!['localhost', '127.0.0.1'].includes(u.hostname) && !u.protocol.startsWith('data')) external.push(r.url());
+  });
+  const t0 = Date.now();
+  await page.getByRole('button', { name: /caries learning studio/i }).click();
+  await page.waitForSelector('.viewport canvas', { timeout: 30000 });
+  await page.waitForFunction(() => !!window.__dentalverseStudio, null, { timeout: 30000 });
+  timings.clickToModel = Date.now() - t0;
+  await settle(1500);
+  const glb = await page.evaluate(() => {
+    const e = performance.getEntriesByType('resource').find((r) => r.name.includes('lower-molar-47.glb'));
+    return e ? { ms: Math.round(e.duration), bytes: e.transferSize || e.encodedBodySize } : null;
+  });
+  assert(glb, 'GLB was not requested');
+  timings.glb = glb;
+  const px = await shot('S1-studio-external');
+  const lit = px.filter((v, i) => i % 3 === 0 && v < 235).length / (px.length / 3);
+  assert(lit > 0.05, `canvas looks blank (${(lit * 100).toFixed(1)}% non-background)`);
+  assert(external.length === 0, `third-party requests: ${external.join(', ')}`);
+  return `model visible ${timings.clickToModel} ms after click (GLB ${glb.bytes} B fetched in ${glb.ms} ms)`;
+});
+
+await check('S2. Studio rotate, zoom, reset and auto-rotate', async () => {
+  const start = await camPos();
+  const box = await page.locator('.viewport canvas').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 160, box.y + box.height / 2 + 40, { steps: 8 });
+  await page.mouse.up();
+  await settle(600);
+  const rotated = await camPos();
+  assert(dist(start, rotated) > 1, 'drag did not rotate');
+  const r0 = Math.hypot(...rotated);
+  await page.mouse.wheel(0, -600);
+  await settle(800);
+  const zoomed = await camPos();
+  assert(Math.hypot(...zoomed) < r0 - 0.5, 'wheel did not zoom in');
+  await page.getByRole('button', { name: /reset camera/i }).click();
+  await settle(1200);
+  const reset = await camPos();
+  assert(dist(start, reset) < 0.5, `reset camera off by ${dist(start, reset).toFixed(2)}`);
+  await page.getByRole('button', { name: /auto-rotate/i }).click();
+  await settle(1500);
+  const spun = await camPos();
+  await page.getByRole('button', { name: /auto-rotate/i }).click();
+  assert(dist(reset, spun) > 0.5, 'auto-rotate did not move the camera');
+  await page.getByRole('button', { name: /reset camera/i }).click();
+  await settle(1200);
+  return 'drag, wheel, reset (back within 0.5 mm) and auto-rotate all move the camera as expected';
+});
+
+await check('S3. Hover and click select the scanned enamel, dentin and pulp', async () => {
+  await page.getByRole('button', { name: /^◧/ }).click();
+  await settle(1500);
+  assert((await store('st.viewMode')) === 'section', 'section did not open');
+  const picked = [];
+  for (const id of ['enamel', 'dentin', 'pulp']) {
+    const a = await studioAnchor('sectionAnchors', id);
+    assert(a, `no anchor for ${id}`);
+    const before = await shot(`S3-before-${id}`);
+    const p = await project(...a);
+    await page.mouse.move(p.x, p.y);
+    await settle(400);
+    const hovered = await shot(`S3-hover-${id}`);
+    const changed = differs(before, hovered, 8);
+    assert(changed > 0.002, `hovering ${id} did not highlight it (${(changed * 100).toFixed(2)}% changed)`);
+    await clickWorld(...a);
+    picked.push(await store('st.selectedStructure'));
+  }
+  assert(picked.join() === 'enamel,dentin,pulp', `selected ${picked.join()}`);
+  const info = await page.locator('.info').innerText();
+  assert(/pulp/i.test(info), 'info panel did not describe the selection');
+  await page.mouse.move(5, 5);
+  return 'hover highlights; clicks select enamel → dentin → pulp; info panel follows';
+});
+
+await check('S4. Layer visibility toggles change the model', async () => {
+  const before = await shot('S4-all-layers');
+  const layers = page.getByRole('group', { name: /^layers$/i });
+  await layers.getByRole('button', { name: /enamel/i }).click();
+  await settle(800);
+  const noEnamel = await shot('S4-no-enamel');
+  await layers.getByRole('button', { name: /enamel/i }).click();
+  await layers.getByRole('button', { name: /periodontal|pdl/i }).click();
+  await settle(800);
+  const withPdl = await shot('S4-with-pdl');
+  await layers.getByRole('button', { name: /periodontal|pdl/i }).click();
+  const a = differs(before, noEnamel);
+  const b = differs(before, withPdl);
+  assert(a > 0.005 && b > 0.005, `hide enamel ${(a * 100).toFixed(1)}%, show PDL ${(b * 100).toFixed(1)}%`);
+  return `hide enamel changed ${(a * 100).toFixed(1)}% of pixels, show PDL ${(b * 100).toFixed(1)}%`;
+});
+
+await check('S5. Lesson stages: navigation, labels and info stay in sync', async () => {
+  const seen = [];
+  await page.getByRole('button', { name: /reset to first step/i }).click();
+  await settle(800);
+  let prev = await shot('S5-stage-1');
+  for (let i = 1; i <= 3; i++) {
+    await page.getByRole('button', { name: 'Next step' }).click();
+    await settle(i === 3 ? 6000 : 3000);
+    const step = await store('st.step');
+    const title = await page.locator('.timeline__title').innerText();
+    const heading = await page.locator('.info h2').first().innerText();
+    assert(step === i, `step ${step} after ${i} × next`);
+    assert(title.includes(heading), `timeline "${title}" vs info "${heading}"`);
+    const labels = await overlayText();
+    assert(/carious lesion \(schematic\)/i.test(labels), `stage ${i + 1} lacks the schematic lesion label`);
+    const px = await shot(`S5-stage-${i + 1}`);
+    assert(differs(prev, px) > 0.003, `stage ${i + 1} looks identical to the previous stage`);
+    prev = px;
+    seen.push(heading);
+  }
+  await page.getByRole('button', { name: 'Previous step' }).click();
+  await settle(2500);
+  assert((await store('st.step')) === 2, 'previous did not go back');
+  await page.getByRole('button', { name: /^play$/i }).click();
+  await settle(500);
+  assert(await store('st.playing'), 'play did not start');
+  await page.getByRole('button', { name: /pause/i }).click();
+  assert(!(await store('st.playing')), 'pause did not stop');
+  return seen.join(' → ');
+});
+
+await check('S6. Cross-sectional comparison stage', async () => {
+  await page.getByRole('group', { name: /lesson stages/i }).getByRole('button', { name: /compare/i }).click();
+  await settle(4000);
+  const captions = await page.locator('.scene-caption').allInnerTexts();
+  assert(captions.length === 3, `expected 3 captions, saw ${captions.join('|')}`);
+  const before = await shot('S6-compare-3');
+  assert(await page.getByRole('toolbar').getByRole('button', { name: /cross-section/i }).isDisabled(), 'cross-section toggle should be locked');
+  await page.getByRole('group', { name: /stages to compare/i }).getByRole('button', { name: /sound/i }).click();
+  await settle(4000);
+  const after = await page.locator('.scene-caption').allInnerTexts();
+  const px = await shot('S6-compare-4');
+  assert(after.length === 4 && differs(before, px) > 0.01, `captions ${after.join('|')}`);
+  return after.join(' | ');
+});
+
+await check('S7. Knowledge check: markers on the model, feedback and score', async () => {
+  await page.getByRole('group', { name: /lesson stages/i }).getByRole('button', { name: /check/i }).click();
+  await settle(5000);
+  await shot('S7-check');
+  const labels = (await overlayText()).split(/\s+/);
+  for (const m of ['A', 'B', 'C']) assert(labels.includes(m), `marker ${m} missing`);
+  const q1 = page.getByRole('region', { name: 'Question 1' });
+  await q1.getByRole('button', { name: 'Dentin' }).click();
+  const fb = await q1.getByRole('status').innerText();
+  const q2 = page.getByRole('region', { name: 'Question 2' });
+  await q2.getByRole('button', { name: /normal occlusal fissure/i }).click();
+  const score = await page.getByTestId('studio-score').innerText();
+  assert(/^Correct/.test(fb) && score.includes('1 / 2'), `feedback "${fb}", score "${score}"`);
+  return `right answer → "Correct.", wrong answer counted; ${score}`;
+});
+
+await check('S8. Studio is keyboard operable', async () => {
+  const chip = page.getByRole('group', { name: /lesson stages/i }).getByRole('button', { name: /sound/i });
+  await chip.focus();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await settle(800);
+  assert((await store('st.step')) === 1, 'Tab + Enter did not open stage 2');
+  await page.getByRole('button', { name: 'Next step' }).focus();
+  await page.keyboard.press('Space');
+  await settle(500);
+  assert((await store('st.step')) === 2, 'Space on Next did not advance');
+  await page.getByRole('button', { name: /auto-rotate/i }).focus();
+  await page.keyboard.press('Enter');
+  const on = await store('st.autoRotate');
+  await page.keyboard.press('Enter');
+  assert(on && !(await store('st.autoRotate')), 'toolbar not keyboard operable');
+  return 'stage chips, timeline and toolbar respond to Tab/Enter/Space';
+});
+
+await check('S9. Studio layout on a phone', async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await settle(2500);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  const canvas = await page.locator('.viewport canvas').boundingBox();
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/S9-studio-mobile.png` });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await settle(1000);
+  assert(overflow <= 1, `horizontal overflow ${overflow}px`);
+  assert(canvas && canvas.width >= 300 && canvas.height >= 250, `canvas ${JSON.stringify(canvas)}`);
+  return `canvas ${Math.round(canvas.width)}×${Math.round(canvas.height)}, no horizontal scroll`;
+});
+
+await check('S10. Missing model file shows an error with working retry and fallback', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const p = await ctx.newPage();
+  await p.route('**/lower-molar-47.glb', (r) => r.fulfill({ status: 404, body: 'Not found' }));
+  await p.goto(URL);
+  await p.getByRole('button', { name: /caries learning studio/i }).click();
+  await p.getByRole('heading', { name: 'The 3D model is unavailable' }).waitFor({ timeout: 20000 });
+  assert((await p.getByRole('toolbar', { name: /3d view controls/i }).count()) === 0, '3D toolbar shown without a model');
+  if (SHOTS) await p.locator('.viewport').screenshot({ path: `${SHOTS}/S10-missing-model.png` });
+  await p.unroute('**/lower-molar-47.glb');
+  await p.getByRole('button', { name: 'Try again' }).click();
+  await p.waitForSelector('.viewport canvas', { timeout: 30000 });
+  const p2 = await ctx.newPage();
+  await p2.route('**/lower-molar-47.glb', (r) => r.fulfill({ status: 404, body: 'Not found' }));
+  await p2.goto(URL);
+  await p2.getByRole('button', { name: /caries learning studio/i }).click();
+  await p2.getByRole('button', { name: /schematic caries module/i }).click({ timeout: 20000 });
+  const topic = await p2.evaluate(() => window.__dentalverse?.store.getState().topic ?? document.querySelector('[aria-current="page"]')?.textContent);
+  await ctx.close();
+  assert(/caries/i.test(String(topic)), `fallback opened ${topic}`);
+  return 'error message shown; retry loads the model once the file is back; fallback opens the schematic module';
+});
+
+await check('S11. Without WebGL the studio explains itself and the lesson still works', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await ctx.addInitScript(() => {
+    const orig = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+      return /webgl/.test(type) ? null : orig.call(this, type, ...rest);
+    };
+  });
+  const p = await ctx.newPage();
+  const errors = [];
+  p.on('pageerror', (e) => errors.push(e.message));
+  await p.goto(URL);
+  await p.getByRole('button', { name: /caries learning studio/i }).click();
+  await p.getByRole('heading', { name: 'WebGL is not available' }).waitFor({ timeout: 20000 });
+  if (SHOTS) await p.locator('.workspace').screenshot({ path: `${SHOTS}/S11-no-webgl.png` });
+  await p.getByRole('button', { name: 'Next step' }).click();
+  const heading = await p.locator('.info h2').first().innerText();
+  await ctx.close();
+  assert(errors.length === 0, errors.join(' | '));
+  assert(/early/i.test(heading), `lesson did not advance: ${heading}`);
+  return `fallback message shown, lesson advanced to "${heading}", no page errors`;
+});
+
 await check('15. No unresolved critical runtime errors in the console', async () => {
   assert(consoleErrors.length === 0, consoleErrors.slice(0, 5).join(' | '));
   return 'console clean';
 });
 
 await browser.close();
+if (timings.glb) console.log(`\nStudio timings: module click → model on screen ${timings.clickToModel} ms; GLB ${timings.glb.bytes} B in ${timings.glb.ms} ms`);
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} acceptance checks passed`);
 process.exit(failed.length ? 1 : 0);

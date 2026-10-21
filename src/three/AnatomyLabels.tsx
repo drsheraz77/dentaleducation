@@ -150,13 +150,23 @@ export function LabelProjector({ anchors }: { anchors: LabelAnchor[] }) {
     };
 
     // Pills and captions: centred on their point. Callouts too on narrow screens.
-    for (const a of anchors) {
-      if (a.kind === 'bracket' || (a.kind === 'callout' && !narrow)) continue;
+    // Top to bottom, a label that would overlap one already placed moves down below it.
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+    const centred = anchors
+      .filter((a) => a.kind !== 'bracket' && !(a.kind === 'callout' && !narrow))
+      .map((a) => ({ a, p: toScreen(a.pos) }))
+      .sort((m, n) => m.p.y - n.p.y);
+    for (const { a, p } of centred) {
       const el = elements.get(a.key);
       if (!el) continue;
-      const p = toScreen(a.pos);
+      const { width: w, height: h } = el.getBoundingClientRect();
+      let y = p.y;
+      for (const q of placed) {
+        if (Math.abs(q.x - p.x) < (q.w + w) / 2 + 2 && Math.abs(q.y - y) < (q.h + h) / 2 + 2) y = q.y + (q.h + h) / 2 + 2;
+      }
+      if (p.ok) placed.push({ x: p.x, y, w, h });
       show(el, p.ok);
-      el.style.transform = `translate(-50%, -50%) translate(${p.x}px, ${p.y}px)`;
+      el.style.transform = `translate(-50%, -50%) translate(${p.x}px, ${y}px)`;
       show(elements.get(`${a.key}:line`), false);
       show(elements.get(`${a.key}:dot`), false);
     }

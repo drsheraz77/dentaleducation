@@ -46,7 +46,7 @@ class SceneErrorBoundary extends Component<{ children: ReactNode }, { error: Err
 }
 
 /** Neutral studio lighting generated locally (no external HDR files). */
-function SceneEnvironment() {
+export function SceneEnvironment() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   useEffect(() => {

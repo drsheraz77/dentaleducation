@@ -46,14 +46,18 @@ export const SITE_FRAMES: Record<LesionSite, SiteFrame> = {
 };
 
 export function siteMatrix(site: LesionSite): THREE.Matrix4 {
-  const f = SITE_FRAMES[site];
+  return frameMatrix(SITE_FRAMES[site]);
+}
+
+/** Placement of the local lesion frame (growth along −Y from y = 0) at a site on a tooth. */
+export function frameMatrix(f: SiteFrame): THREE.Matrix4 {
   const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), f.axis.clone().normalize());
   return new THREE.Matrix4().compose(f.origin, q, new THREE.Vector3(1, 1, 1));
 }
 
-function lens(profile: ProfilePoint[], aspect: [number, number], site: LesionSite): THREE.BufferGeometry {
+function lens(profile: ProfilePoint[], aspect: [number, number], frame: SiteFrame): THREE.BufferGeometry {
   const g = revolve({ profile, segments: 40, aspect, squareness: 2, spacing: 0.08 });
-  g.applyMatrix4(siteMatrix(site));
+  g.applyMatrix4(frameMatrix(frame));
   g.computeBoundingBox();
   g.computeBoundingSphere();
   return g;
@@ -69,8 +73,8 @@ export interface LesionGeometries {
  * Enamel lesion: subsurface cone (surface layer kept intact while non-cavitated).
  * Dentin lesion: outer "affected" zone and inner "infected" zone.
  */
-export function buildLesionGeometries(lesion: LesionVisual): LesionGeometries {
-  const f = SITE_FRAMES[lesion.site];
+export function buildLesionGeometries(lesion: LesionVisual, frame: SiteFrame = SITE_FRAMES[lesion.site]): LesionGeometries {
+  const f = frame;
   const T = f.enamelThickness;
   const D = f.dentinToPulp;
   const surfaceLayer = lesion.cavitation > 0 ? 0.02 : 0.07;
@@ -89,7 +93,7 @@ export function buildLesionGeometries(lesion: LesionVisual): LesionGeometries {
         { r: 0, y: -depth },
       ],
       f.aspect,
-      lesion.site,
+      f,
     );
   }
 
@@ -106,17 +110,17 @@ export function buildLesionGeometries(lesion: LesionVisual): LesionGeometries {
       { r: spread * scale * 0.55, y: top - depth * depthScale * 0.8 },
       { r: 0, y: top - depth * depthScale },
     ];
-    dentinOuter = lens(profile(1, 1), f.aspect, lesion.site);
-    if (lesion.dentinDepth > 0.15) dentinInner = lens(profile(0.68, 0.72), f.aspect, lesion.site);
+    dentinOuter = lens(profile(1, 1), f.aspect, f);
+    if (lesion.dentinDepth > 0.15) dentinInner = lens(profile(0.68, 0.72), f.aspect, f);
   }
 
   return { enamel, dentinOuter, dentinInner };
 }
 
 /** Irregular cavitation volume used as a CSG cutter. */
-export function buildCavitationBrush(lesion: LesionVisual): THREE.BufferGeometry | null {
+export function buildCavitationBrush(lesion: LesionVisual, frame: SiteFrame = SITE_FRAMES[lesion.site]): THREE.BufferGeometry | null {
   if (lesion.cavitation <= 0.02) return null;
-  const f = SITE_FRAMES[lesion.site];
+  const f = frame;
   const c = lesion.cavitation;
   const geom = new THREE.IcosahedronGeometry(1, 4);
   const pos = geom.getAttribute('position');
@@ -132,7 +136,7 @@ export function buildCavitationBrush(lesion: LesionVisual): THREE.BufferGeometry
   const radius = 0.35 + 1.5 * c;
   geom.scale(radius * f.aspect[0], Math.max(0.3, depthIntoTooth) + 0.6, radius * f.aspect[1]);
   geom.translate(0, 0.5, 0);
-  geom.applyMatrix4(siteMatrix(lesion.site));
+  geom.applyMatrix4(frameMatrix(frame));
   geom.deleteAttribute('uv');
   // Normals are recomputed after vertices are welded (see getCutter) for smooth cut walls.
   geom.deleteAttribute('normal');

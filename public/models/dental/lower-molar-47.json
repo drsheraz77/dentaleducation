@@ -1,0 +1,71 @@
+{
+  "file": "lower-molar-47.glb",
+  "tooth": {
+    "universal": 31,
+    "fdi": 47,
+    "name": "Mandibular right second molar",
+    "fma": "FMA55706"
+  },
+  "frame": "+Y occlusal, +X mesial, +Z buccal, millimetres, y = 0 at the lowest enamel vertex (≈ CEJ)",
+  "rigidTransform": [
+    0.2338958831317884,
+    0.1818829266279562,
+    -0.9550975431102577,
+    0,
+    -0.9499573272982533,
+    -0.16645596334297874,
+    -0.26433593887309387,
+    0,
+    -0.20705987580011687,
+    0.9691289972283412,
+    0.133847654312019,
+    0,
+    -6.0838422775268555,
+    28.130695343017578,
+    -17.615281105041504,
+    1
+  ],
+  "layers": [
+    {
+      "layer": "tooth",
+      "source": "FMA55706.stl",
+      "triangles": 7998,
+      "vertices": 4001,
+      "minY": -13.92,
+      "maxY": 10.72
+    },
+    {
+      "layer": "enamel",
+      "source": "FMA55706-enamel.stl",
+      "triangles": 3000,
+      "vertices": 1399,
+      "minY": 0,
+      "maxY": 10.45
+    },
+    {
+      "layer": "pulp",
+      "source": "FMA55706-pulp.stl",
+      "triangles": 3500,
+      "vertices": 1739,
+      "minY": -13.57,
+      "maxY": 3.88
+    },
+    {
+      "layer": "pdl",
+      "source": "FMA55706-pdl.stl",
+      "triangles": 3000,
+      "vertices": 1496,
+      "minY": -14.34,
+      "maxY": 3.39
+    },
+    {
+      "layer": "lamina",
+      "source": "FMA55706-lamina.stl",
+      "triangles": 3000,
+      "vertices": 1499,
+      "minY": -14.74,
+      "maxY": 3.87
+    }
+  ],
+  "bytes": 142180
+}

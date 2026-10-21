@@ -158,6 +158,19 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     refs: ['nanci2018', 'fejerskov2015'],
     verification: REVIEWED,
   },
+  lamina: {
+    id: 'lamina',
+    name: 'Lamina dura (socket wall)',
+    function: 'The thin layer of compact bone lining the tooth socket, to which the periodontal ligament attaches.',
+    characteristics: [
+      'Seen on periapical radiographs as a thin radiopaque line around the root, beside the radiolucent periodontal ligament space.',
+    ],
+    cariesRelevance: 'Not affected by caries itself; changes around the apex can follow pulpal infection.',
+    clinicalRelevance: 'Loss of the lamina dura around an apex on a radiograph can be a sign of periapical inflammation.',
+    refs: ['nanci2018'],
+    // Added with the Caries Learning Studio: awaiting qualified review.
+    verification: 'draft_pending_review',
+  },
   lesion: {
     id: 'lesion',
     name: 'Carious lesion',

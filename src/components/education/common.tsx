@@ -28,7 +28,7 @@ export function References({ ids, verification = 'expert-reviewed' }: { ids: str
   const refs = referencesFor(ids);
   return (
     <Section title="References and educational notes">
-      {verification === 'draft-needs-expert-review' ? (
+      {verification === 'draft_pending_review' ? (
         <p>
           <span className="verify">Draft · requires expert verification</span>
         </p>

@@ -20,7 +20,9 @@ export function NavPanel() {
         ))}
       </ul>
       <p className="nav__note">
-        Model: simplified mandibular first molar. Shapes are scientifically representative, not anatomically validated.
+        {topic === 'studio'
+          ? 'Model: CBCT-derived mandibular second molar (3Dentes, CC BY-NC 4.0). Lesions are schematic overlays; content is pending expert review.'
+          : 'Model: simplified mandibular first molar. Shapes are scientifically representative, not anatomically validated.'}
       </p>
     </nav>
   );

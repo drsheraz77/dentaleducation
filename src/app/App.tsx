@@ -13,6 +13,7 @@ import { TISSUE_COLORS } from '../three/colors';
 
 // three.js, React Three Fiber and the CSG engine are loaded on demand so the UI shell appears immediately.
 const ToothScene = lazy(() => import('../three/ToothScene').then((m) => ({ default: m.ToothScene })));
+const DentalModelViewer = lazy(() => import('../three/studio/DentalModelViewer').then((m) => ({ default: m.DentalModelViewer })));
 
 function SceneLoading() {
   return (
@@ -91,6 +92,7 @@ export default function App() {
   const topic = useSim((s) => s.topic);
   const textbook = useSim(isTextbookView);
   const tubules = useSim(isTubulesView);
+  const studio = topic === 'studio';
   useGuidedViewSync();
   const show3D = topic !== 'quiz';
   return (
@@ -101,9 +103,16 @@ export default function App() {
         <main className="workspace" aria-label="Workspace">
           <ModuleControls />
           {show3D ? (
-            <div className={textbook || tubules ? 'viewport viewport--textbook' : 'viewport'}>
+            <div className={textbook || tubules || studio ? 'viewport viewport--textbook' : 'viewport'}>
               {tubules ? (
                 <TubulesView />
+              ) : studio ? (
+                <>
+                  {/* The viewer shows its own toolbar once the model is on screen. */}
+                  <Suspense fallback={<SceneLoading />}>
+                    <DentalModelViewer />
+                  </Suspense>
+                </>
               ) : (
                 <>
                   <Suspense fallback={<SceneLoading />}>

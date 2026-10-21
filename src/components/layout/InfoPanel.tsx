@@ -3,6 +3,7 @@ import { AnatomyInfo, CariesInfo, ClassificationInfo } from '../education/TopicI
 import { MaterialsInfo, PreparationInfo } from '../education/ProcedureInfo';
 import { DiagnosisPanel } from '../education/DiagnosisPanel';
 import { CasePanel } from '../assessment/CasePanel';
+import { ClinicalAnnotationPanel } from '../studio/ClinicalAnnotationPanel';
 import { QUIZ } from '../../data/quiz';
 
 function QuizInfo() {
@@ -30,6 +31,8 @@ export function InfoPanel() {
         return <CariesInfo />;
       case 'classification':
         return <ClassificationInfo />;
+      case 'studio':
+        return <ClinicalAnnotationPanel />;
       case 'diagnosis':
         return <DiagnosisPanel />;
       case 'preparation':

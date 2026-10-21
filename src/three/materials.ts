@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { useEffect, useMemo } from 'react';
 import type { CutSurfaceFinish, LesionVisual, MaterialId } from '../types';
-import { SITE_FRAMES } from './geometry/lesion';
+import { SITE_FRAMES, type SiteFrame } from './geometry/lesion';
 
 export const SECTION_PLANE = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
 
@@ -28,9 +28,9 @@ export function createLesionUniforms(): LesionUniforms {
 }
 
 /** Target uniform values for a lesion state; the scene eases towards them each frame. */
-export function lesionSurfaceTarget(lesion: LesionVisual | null) {
+export function lesionSurfaceTarget(lesion: LesionVisual | null, frame?: SiteFrame) {
   if (!lesion || lesion.surfaceTone === 'none') return { intensity: 0, center: new THREE.Vector3(), radii: new THREE.Vector3(1, 1, 1), color: new THREE.Color('#ffffff') };
-  const f = SITE_FRAMES[lesion.site];
+  const f = frame ?? SITE_FRAMES[lesion.site];
   const s = 0.55 + 1.3 * Math.max(lesion.enamelDepth * 0.7, lesion.dentinDepth);
   const radii =
     lesion.site === 'occlusal'
@@ -45,7 +45,12 @@ export function lesionSurfaceTarget(lesion: LesionVisual | null) {
  * MeshPhysicalMaterial with an injected lesion-discolouration term.
  * The colour shift is computed in world space so it works on CSG-cut geometry too.
  */
-export function makeTissueMaterial(params: THREE.MeshPhysicalMaterialParameters, uniforms: LesionUniforms | null) {
+export function makeTissueMaterial(
+  params: THREE.MeshPhysicalMaterialParameters,
+  uniforms: LesionUniforms | null,
+  /** Pushes the surface back in depth only (mm), so a coincident surface drawn over it wins. */
+  depthBias = 0,
+) {
   const mat = new THREE.MeshPhysicalMaterial(params);
   if (uniforms) {
     mat.onBeforeCompile = (shader) => {
@@ -53,6 +58,17 @@ export function makeTissueMaterial(params: THREE.MeshPhysicalMaterialParameters,
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vDvWorldPos;')
         .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvDvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      if (depthBias > 0) {
+        // Depth from a point further along the view ray; x/y (and so the silhouette) are unchanged.
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <project_vertex>',
+          `#include <project_vertex>
+{
+  vec4 dvBiased = projectionMatrix * vec4(mvPosition.xyz + normalize(mvPosition.xyz) * ${depthBias.toFixed(3)}, 1.0);
+  gl_Position.z = dvBiased.z / dvBiased.w * gl_Position.w;
+}`,
+        );
+      }
       shader.fragmentShader = shader.fragmentShader
         .replace(
           '#include <common>',
@@ -76,7 +92,7 @@ uniform float uLesionIntensity;`,
 }`,
         );
     };
-    mat.customProgramCacheKey = () => 'dv-lesion-tissue';
+    mat.customProgramCacheKey = () => `dv-lesion-tissue:${depthBias}`;
   }
   return mat;
 }

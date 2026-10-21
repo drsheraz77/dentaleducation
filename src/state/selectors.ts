@@ -19,6 +19,7 @@ import { CASES } from '../data/cases';
 import { QUIZ } from '../data/quiz';
 import { evaluateDiagnosis } from '../modules/diagnosis/decisionEngine';
 import { STIMULI } from '../data/dentinTubules';
+import { LESSON_STAGES } from '../data/studio/cariesLesson';
 
 /** The anatomy module's longitudinal section, laid out like a textbook figure (callouts, brackets, light page). */
 export function isTextbookView(s: Pick<SimState, 'topic' | 'viewMode'>): boolean {
@@ -185,6 +186,8 @@ export function getTimeline(s: SimState): TimelineStep[] {
       return ANATOMY_TOUR.map((id) => ({ id, title: ANATOMY[id].name }));
     case 'caries':
       return CARIES_STAGES.map((c) => ({ id: c.id, title: c.shortTitle }));
+    case 'studio':
+      return LESSON_STAGES.map((st) => ({ id: st.id, title: st.title }));
     case 'classification':
       return CLASSIFICATION_EXAMPLES.map((c) => ({ id: c.id, title: c.title }));
     case 'preparation':
@@ -276,6 +279,9 @@ export function deriveScene(s: SimState): SceneDescription {
       return { teeth: [{ visual: mergeVisual(CASES[s.caseIndex].visual) }], notice: { tone: 'info', text: 'Simulated, fictional case for learning.' }, show3D: true };
     case 'quiz':
       return { teeth: [], notice: null, show3D: false };
+    case 'studio':
+      // The studio renders the scanned tooth with its own viewer (src/three/studio).
+      return { teeth: [], notice: null, show3D: true };
   }
 }
 

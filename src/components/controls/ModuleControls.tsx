@@ -7,6 +7,9 @@ import { ADHESIVE_PROTOCOLS, MATERIALS, MATERIAL_BY_ID } from '../../data/materi
 import { CASES } from '../../data/cases';
 import { STIMULI } from '../../data/dentinTubules';
 import { chosenInstrument, instrumentKey } from '../../state/selectors';
+import { LESSON_STAGES } from '../../data/studio/cariesLesson';
+import { AnatomyLayerControls, CompareStageControls } from '../studio/AnatomyLayerControls';
+import { GuidedLessonControls } from '../studio/GuidedLessonControls';
 import type { AdhesiveProtocolId, MaterialId, ProcedureId } from '../../types';
 
 function AnatomyViewSwitch() {
@@ -77,6 +80,15 @@ export function ModuleControls() {
           </div>
         </div>
       );
+    case 'studio': {
+      const stage = LESSON_STAGES[Math.min(s.step, LESSON_STAGES.length - 1)];
+      return (
+        <div className="module-controls" aria-label="Caries learning studio controls">
+          <GuidedLessonControls />
+          {stage.kind === 'compare' ? <CompareStageControls /> : <AnatomyLayerControls />}
+        </div>
+      );
+    }
     case 'classification':
       return (
         <div className="module-controls" aria-label="Lesion classification examples">

@@ -2,11 +2,15 @@
 
 An interactive 3D teaching application for dental anatomy, caries progression, lesion
 classification, treatment planning, cavity preparation and restorative materials. It runs
-entirely in the browser: no backend, no API keys, no external 3D assets.
+entirely in the browser: no backend and no API keys. The procedural modules use no external
+assets. The **Caries Learning Studio** uses one CBCT-derived tooth model, stored in this
+repository and licensed **CC BY-NC 4.0 (non-commercial)**. See §6.
 
 > **Educational simulation only.** DentalVerse 3D is not a diagnostic system, a validated ICDAS
 > scoring tool or a validated clinical procedural trainer. The scientific content and references
-> were approved section by section on 2026-10-21 (see §9, Content review).
+> of the procedural modules were approved section by section on 2026-10-21 (see §9, Content
+> review). The Caries Learning Studio is **`draft_pending_review`**: it has not been reviewed yet
+> (see `CLINICAL_REVIEW_CHECKLIST.md`).
 
 ---
 
@@ -28,13 +32,19 @@ npm run dev          # http://localhost:5173
 | `npm run typecheck` | TypeScript only |
 | `npm run lint` | oxlint |
 | `npm run e2e` | Browser acceptance tests (see §4). Needs a running preview server |
+| `node tools/assets/build-dental-assets.mjs <3Dentes checkout>` | Rebuild the studio's GLB from the 3Dentes STL files (only needed when changing the asset; the built GLB is committed) |
+
+The studio's model is already in `public/models/dental/`, so no download is needed to run the
+app. To rebuild it, clone https://github.com/NateSaindon/3Dentes, read its licence, and run the
+command above. Provenance and every modification are recorded in
+`public/models/dental/ASSET_CATALOG.md`.
 
 ---
 
 ## 2. Implemented features
 
 ### Application shell
-- Left navigation with eight modules; a topic-specific control bar; a central 3D workspace; a
+- Left navigation with nine modules; a topic-specific control bar; a central 3D workspace; a
   right-hand information panel ("What is happening?", "Why does it matter?", clinical relevance,
   instruments/materials, step-by-step list, references); and a bottom timeline (play, pause,
   previous, next, reset, speed 0.5–2×, clickable step progress).
@@ -58,6 +68,41 @@ npm run dev          # http://localhost:5173
   it and read its description.
 - Toggle labels, gingiva and bone, **cross-section** (the buccal half is clipped and every tissue
   shows a solid cut face), and **normal ↔ pathological** anatomy.
+
+### Caries Learning Studio (3D scan) — `draft_pending_review`
+A guided caries lesson on a **real mandibular second molar segmented from a CBCT** (3Dentes,
+CC BY-NC 4.0). The enamel, tooth, pulp, PDL and lamina-dura meshes are separate layers from the
+source, not colours painted on one mesh.
+
+**Viewer**
+- Rotate, zoom, pan, reset and auto-rotate.
+- External and cross-section views. Cross-sections are exact plane sections of each scanned layer,
+  with outlines.
+- Hover and click highlighting. The info panel shows the selected structure with its evidence
+  tier (measured or derived).
+- Show or hide each layer, and the lesion overlay.
+- Loading progress, error (with retry and a fallback to the schematic module), WebGL-unavailable
+  and context-lost states.
+
+**Six stages**
+1. Sound tooth
+2. Early enamel lesion
+3. Lesion reaching dentin
+4. Advanced cavitated lesion
+5. Side-by-side cross-sectional comparison (choose 2–4 stages)
+6. Knowledge check with lettered markers placed on the model
+
+The stages are played with the shared timeline (play, pause, replay, next, previous, reset,
+speed) or the stage chips.
+
+**Scan versus overlay.** Every stage lists what comes from the scan and what is an
+**educational overlay (schematic)**. Lesions are placed at the central fossa and the
+fissure-to-pulp distance measured on the scanned tooth, and the cavity is cut out of the scanned
+surfaces. Lesion shapes and colours remain schematic.
+
+**Reasoning steps.** Detection, classification, activity, risk, diagnosis and management are
+named per stage. A disclaimer states that the stages are not time-calibrated, not diagnostic and
+not a competence assessment.
 
 ### Module 1 — Dental caries
 - Eight stages: normal; biofilm (film with bacteria); acid challenge (animated acid particles going
@@ -148,10 +193,23 @@ src/
     CrossSectionView.tsx       Clipping + back-face "cap" technique for solid cut faces
     SceneControls.tsx          OrbitControls, camera presets, test bridge
     AnatomyLabels.tsx          DOM label overlay projected from the 3D scene
-    geometry/                  Procedural anatomy (revolve.ts, anatomy.ts), lesions, CSG cavities
+    geometry/                  Procedural anatomy (revolve.ts, anatomy.ts), lesions, CSG cavities,
+                               slice.ts (exact plane sections of any mesh: loops, holes, areas)
+    studio/                    Viewer for downloaded dental models (Caries Learning Studio)
+      DentalModelViewer.tsx    Canvas, camera presets, picking, labels, fallbacks
+      dentalModel.ts           GLB loading (meshopt), layer sections, fossa/pulp measurement, anchors
+      CariesProgressionController.ts  Stage lesion → overlay volumes, cavity CSG, sections (cached)
+      StudioTooth.tsx          Scanned layers with highlight, clipping and lesion tint
+      ToothCrossSection.tsx    Flat cut faces with outlines; stencil mask keeps the cavity open
+  components/studio/           AnatomyLayerControls, GuidedLessonControls, ClinicalAnnotationPanel,
+                               StudioKnowledgeCheck, ModelLoadingFallback
+  data/studio/                 assets.ts (asset registry: provenance, licence, layer tiers)
+                               cariesLesson.ts (stages, overlays, concepts, knowledge check)
   types/index.ts               Domain types shared by data, state and rendering
   tests/                       Vitest suites
 e2e/acceptance.mjs             Real-browser acceptance tests (Playwright + headless Chromium)
+tools/assets/                  Reproducible asset pipeline (STL → welded, oriented, compressed GLB)
+public/models/dental/          Served model files + ASSET_CATALOG.md (provenance and licences)
 ```
 
 **Data flow.** UI controls → store → `deriveScene()` (pure and unit-tested) → `ToothVisualState`
@@ -172,6 +230,47 @@ state or the learning content, and the selector tests check this.
 - *Performance.* `frameloop="demand"`: the scene renders only while something animates or the
   camera moves. The 3D engine loads lazily (main bundle about 107 kB gzipped; 3D chunk about
   283 kB). Geometries and materials are disposed on unmount or eviction.
+
+### Adding a lesson to the Caries Learning Studio
+Lessons are data. The viewer, controls, timeline and info panel read them; they are not coded
+per lesson.
+1. **Stages.** In a data file shaped like `data/studio/cariesLesson.ts`, define `LessonStage`
+   objects. Each one needs:
+   - an id, title and objective
+   - `whatYouSee`, `explanation`, `modelBased` and `illustrative` lists
+   - the clinical concepts, the lesion parameters, the section flag, the camera and the focus
+     structures
+   - `refs` (ids from `data/references.ts`)
+   - `verification: 'draft_pending_review'`
+2. **Overlays.** Lesion overlays are `LesionVisual` parameters. Their geometry is built at the
+   `SiteFrame` that `dentalModel.ts` measures on the scan. For another site (for example a
+   proximal or cervical lesion), add a measurement function that returns a `SiteFrame` for that
+   site.
+3. **Questions.** Add `StudioQuestion`s. A `marker` letter places a label on the model; place it
+   from real section geometry, as `stageAnchors` does.
+4. **Wiring.** Add a topic id, a `getTimeline` case and a `stepPatch` view rule. Reuse
+   `DentalModelViewer`, `AnatomyLayerControls`, `GuidedLessonControls` and
+   `ClinicalAnnotationPanel`.
+5. **Review.** Add the new content to `CLINICAL_REVIEW_CHECKLIST.md`. It stays a draft until it
+   has been reviewed.
+
+**New models.** Follow the rules in `public/models/dental/ASSET_CATALOG.md`, then add a
+`DentalAsset`, with node names and an evidence tier per layer. The viewer takes the asset as a
+prop.
+
+### Pathway to advanced simulations
+The studio separates *measured anatomy* (scanned layers and exact sections), *derived
+measurements* (fossa, enamel thickness, pulp distance) and *schematic overlays* (lesions,
+cavity). That split is meant to support the following:
+- **Restorative and operative steps on the scanned tooth.** `subtractCutter` (CSG) already works
+  on the scanned enamel and dentin. Preparation outlines from `geometry/cavity.ts` could be
+  placed in the measured `SiteFrame`.
+- **Endodontics.** The scanned pulp and canals are real geometry. Access cavities can be cut
+  through the measured pulp roof, and canal length can be measured along the pulp mesh.
+- **Radiograph-style views.** Summing layer thickness along view rays over exact geometry would
+  give a schematic projection to set beside the clinical description.
+- **Reviewed lesion models.** Replacing the lens-shaped overlays with a voxel or SDF field,
+  driven by an expert-reviewed mineral profile, needs no change to the viewer.
 
 ### Adding endodontics and other procedures
 1. **Content.** Add `data/endodontics.ts` with `Procedure` objects. Each one needs learning
@@ -197,7 +296,16 @@ state or the learning content, and the selector tests check this.
 
 ## 4. Test results (from the final run)
 
-**Unit and UI tests** — `npm test`: **7 files, 56 tests, all passing**
+Full, measured results of the studio upgrade are in **`TEST_RESULTS.md`**:
+- Unit and UI tests: **14 files, 83 tests**, all passing.
+- Browser acceptance: **25/25 checks** passing. That is the 15 original checks plus 11 studio
+  checks for loading, camera, picking, layers, stages, comparison, knowledge check, keyboard,
+  phone, missing model and no-WebGL.
+- Bundle sizes and model-processing timings.
+
+The rest of this section describes the original modules.
+
+**Unit and UI tests (original modules)** — `npm test` at the time: **7 files, 56 tests, all passing**
 - `selectors.test.ts`: caries stages are visually distinct and get monotonically deeper; every
   procedure has 8 steps with distinct states; an unsuitable instrument doesn't cut; selective vs
   conventional removal; before/after; composite vs GIC sequences; adhesive protocols; matrix only
@@ -272,22 +380,47 @@ effects/`useFrame`, and seven are fast-refresh "only export components" hints.
 - **Performance depends on the GPU.** On software-rendered WebGL (as in CI), each CSG step takes
   roughly 100–300 ms, so cutting animations step rather than glide.
 - The UI text is in English only.
+- **Caries Learning Studio limitations.**
+  - The scan is one person's tooth.
+  - Enamel thickness is from the literature; PDL and lamina dura are drawn thicker than reality;
+    cementum is not resolved.
+  - Lesion shapes, colours and cavity outlines are schematic, and a lesion is placed only at the
+    central fossa, on the mesiodistal section plane.
+  - The scanned tooth surface lies up to about 0.25 mm outside the derived enamel shell in
+    places (measured). It is drawn 0.35 mm back in depth so the enamel shows; no vertices are
+    moved. A few small dark specks remain on the external enamel surface. Their cause is not
+    fully diagnosed.
+  - On software-rendered WebGL the studio took about 4.5 s from click to model.
+  - The model is **not commercially licensed** (see §6).
 
 ## 6. External assets
 
-**None are required.** All geometry is generated in code, the environment lighting is generated
-locally (`RoomEnvironment`), and no fonts, textures, HDRs or models are downloaded. Section 7
-lists optional assets for more realism.
+| Asset | Used by | Source | Licence | Commercial use |
+| --- | --- | --- | --- | --- |
+| `public/models/dental/lower-molar-47.glb` | Caries Learning Studio | 3Dentes, Nate Saindon (https://github.com/NateSaindon/3Dentes) | CC BY-NC 4.0 | **No** |
+
+The procedural modules need no assets: all their geometry is generated in code, lighting is
+generated locally (`RoomEnvironment`), and no fonts, textures, HDRs or models are downloaded.
+Nothing is hot-linked at runtime.
+
+The studio model is shown with the attribution "Anatomy from 3Dentes by Nate Saindon,
+CC BY-NC 4.0." **Any commercial deployment must remove or replace it**, or obtain permission
+from the author. The procedural tooth remains the commercial-safe fallback.
+
+Other evaluated sources, and why they were not used, are in
+`public/models/dental/ASSET_CATALOG.md`:
+- NIH 3D arches: CC0 but surface only.
+- Sketchfab: the model link returned 404, and downloads need a login.
 
 ## 7. Recommendations for anatomical realism
 
-1. Replace the procedural crown and roots with **segmented micro-CT or CBCT meshes** of real teeth
+1. *(Started in the Caries Learning Studio with a CBCT tooth; non-commercial licence.)* Replace the procedural crown and roots with **segmented micro-CT or CBCT meshes** of real teeth
    (separate enamel, dentin and pulp meshes as watertight solids, decimated to about 20–50k
    triangles), loaded as glTF. Keep the same `ToothGeometries` interface so CSG, section view and
    picking still work, and document where each scan came from and its licence.
 2. Add the **fifth (distal) cusp**, a mesial root with two canals (MB/ML), canal curvature,
    isthmuses and furcation anatomy. Add adjacent teeth for contacts and Class II matrices.
-3. Improve the cut faces with **stencil-buffer capping**, or volumetric (SDF) rendering for lesion
+3. *(The studio already uses exact plane sections with a stencil mask for the cavity.)* Improve the procedural cut faces with **stencil-buffer capping**, or volumetric (SDF) rendering for lesion
    gradients and translucent zones.
 4. Add **physically based enamel** (subsurface scattering or transmission), and use measured
    colour/translucency data for composite shades.
@@ -343,6 +476,11 @@ reviewer: the "Nerve and blood supply" and "Dentinal tubules" anatomy entries, a
 dentin-tubule view (stimuli, response model and hydrodynamic summary). It is listed in
 `CONTENT_REVIEW.addenda`.
 
+**Caries Learning Studio — not reviewed.** The studio's stages, overlays, knowledge-check
+questions, the "Lamina dura" anatomy entry and the representation of the scanned asset are
+`draft_pending_review`. The app shows the draft badge for them. `CLINICAL_REVIEW_CHECKLIST.md`
+lists every item to review and has a sign-off table.
+
 **When content changes:** set the edited items' `verification` back to
-`'draft-needs-expert-review'` (the app then shows the draft badge for them), get the change
+`'draft_pending_review'` (the app then shows the draft badge for them), get the change
 approved, and update `src/data/review.ts`.

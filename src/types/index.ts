@@ -7,6 +7,7 @@
 export type TopicId =
   | 'anatomy'
   | 'caries'
+  | 'studio'
   | 'classification'
   | 'diagnosis'
   | 'preparation'
@@ -30,13 +31,14 @@ export type StructureId =
   | 'gingiva'
   | 'neurovascular'
   | 'tubules'
+  | 'lamina'
   | 'lesion'
   | 'biofilm'
   | 'restoration'
   | 'liner';
 
 /** Status of scientific content. New or changed content is a draft until a qualified reviewer signs off. */
-export type VerificationStatus = 'draft-needs-expert-review' | 'expert-reviewed';
+export type VerificationStatus = 'draft_pending_review' | 'expert-reviewed';
 
 export interface ContentMeta {
   /** Reference ids from src/data/references.ts */

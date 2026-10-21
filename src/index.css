@@ -1319,3 +1319,23 @@ table.compare th[scope='row'] {
     animation: none;
   }
 }
+
+.scene-message--light {
+  color: #1f2937;
+}
+
+.scene-message--light progress {
+  width: min(280px, 70%);
+}
+
+.marker-chip {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1f2937;
+  color: #fff;
+  font-size: 12px;
+  margin-right: 4px;
+}
