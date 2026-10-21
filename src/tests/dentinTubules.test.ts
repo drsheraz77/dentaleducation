@@ -19,7 +19,7 @@ describe('hydrodynamic model of dentin sensitivity', () => {
     expect(tubuleResponse(byId('none'), true, false).nerveFires).toBe(false);
   });
 
-  it('is flagged as draft content until reviewed', () => {
-    expect(TUBULES_VERIFICATION).toBe('draft-needs-expert-review');
+  it('is marked as reviewed (approved in the review addendum)', () => {
+    expect(TUBULES_VERIFICATION).toBe('expert-reviewed');
   });
 });

@@ -338,6 +338,11 @@ recorded in the *DentalVerse 3D — Scientific Content Review* document, and in 
 `src/data/review.ts`, which sets every content item to `expert-reviewed`. The app shows
 "Expert-reviewed · reviewer · date" beside each reference list.
 
+**Addendum (2026-10-21):** content added after the main review was approved by the same
+reviewer: the "Nerve and blood supply" and "Dentinal tubules" anatomy entries, and the magnified
+dentin-tubule view (stimuli, response model and hydrodynamic summary). It is listed in
+`CONTENT_REVIEW.addenda`.
+
 **When content changes:** set the edited items' `verification` back to
 `'draft-needs-expert-review'` (the app then shows the draft badge for them), get the change
 approved, and update `src/data/review.ts`.

@@ -139,8 +139,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     clinicalRelevance:
       'Pulp sensibility tests (e.g., cold testing) assess the nerve response, not the blood supply directly. Interrupted blood supply leads to pulp necrosis.',
     refs: ['nanci2018', 'nelson2020'],
-    // Added after the 2026-10-21 content review: needs approval before release.
-    verification: 'draft-needs-expert-review',
+    verification: REVIEWED,
   },
   tubules: {
     id: 'tubules',
@@ -157,8 +156,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     clinicalRelevance:
       'Open tubules on exposed dentin (e.g., after gingival recession or loss of cementum) underlie dentin hypersensitivity. Adhesive bonding to dentin relies on infiltrating the tubules and intertubular dentin.',
     refs: ['nanci2018', 'fejerskov2015'],
-    // Added after the 2026-10-21 content review: needs approval before release.
-    verification: 'draft-needs-expert-review',
+    verification: REVIEWED,
   },
   lesion: {
     id: 'lesion',

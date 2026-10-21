@@ -1,10 +1,11 @@
 import type { VerificationStatus } from '../types';
+import { CONTENT_REVIEW } from './review';
 
 /**
  * Magnified dentin view: the hydrodynamic mechanism of dentin sensitivity.
- * Added after the 2026-10-21 content review — every item here is a draft until approved.
+ * Approved in the content-review addendum recorded in ./review.ts.
  */
-export const TUBULES_VERIFICATION: VerificationStatus = 'draft-needs-expert-review';
+export const TUBULES_VERIFICATION: VerificationStatus = CONTENT_REVIEW.status;
 export const TUBULES_REFS = ['nanci2018', 'fejerskov2015'];
 
 export type StimulusId = 'none' | 'cold' | 'air' | 'sweet' | 'probe' | 'heat';
