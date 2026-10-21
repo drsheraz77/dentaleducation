@@ -1,10 +1,8 @@
 import type { Reference } from '../types';
 
 /**
- * Source list. These are established textbooks, consensus statements and guidelines
- * cited from the author's knowledge; bibliographic details (edition, pages) and the
- * mapping of each statement to a source MUST be checked by a qualified reviewer
- * before classroom use. No DOIs are given because they have not been re-verified.
+ * Source list: established textbooks, consensus statements and guidelines.
+ * Approved in the content review recorded in ./review.ts. No DOIs are given.
  */
 export const REFERENCES: Reference[] = [
   {

@@ -192,7 +192,7 @@ function MaterialCompare() {
         The 3D view shows each material’s final restoration in its own supported preparation. Values are qualitative educational summaries, not product
         data.
       </p>
-      <References ids={[...a.refs, ...b.refs]} verification="draft-needs-expert-review" />
+      <References ids={[...a.refs, ...b.refs]} verification="expert-reviewed" />
     </div>
   );
 }

@@ -33,7 +33,7 @@ export type StructureId =
   | 'restoration'
   | 'liner';
 
-/** Status of scientific content. Everything ships as draft until a qualified reviewer signs off. */
+/** Status of scientific content. New or changed content is a draft until a qualified reviewer signs off. */
 export type VerificationStatus = 'draft-needs-expert-review' | 'expert-reviewed';
 
 export interface ContentMeta {

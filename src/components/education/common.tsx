@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { referencesFor } from '../../data/references';
+import { CONTENT_REVIEW } from '../../data/review';
 import { ANATOMY } from '../../data/anatomy';
 import type { StructureId, VerificationStatus } from '../../types';
 import { useSim } from '../../state/store';
@@ -23,13 +24,19 @@ export function BulletList({ items }: { items: string[] }) {
   );
 }
 
-export function References({ ids, verification = 'draft-needs-expert-review' }: { ids: string[]; verification?: VerificationStatus }) {
+export function References({ ids, verification = 'expert-reviewed' }: { ids: string[]; verification?: VerificationStatus }) {
   const refs = referencesFor(ids);
   return (
     <Section title="References and educational notes">
-      {verification === 'draft-needs-expert-review' && (
+      {verification === 'draft-needs-expert-review' ? (
         <p>
           <span className="verify">Draft · requires expert verification</span>
+        </p>
+      ) : (
+        <p>
+          <span className="verify verify--ok">
+            Expert-reviewed · {CONTENT_REVIEW.reviewer} · {CONTENT_REVIEW.date}
+          </span>
         </p>
       )}
       <ol className="refs">

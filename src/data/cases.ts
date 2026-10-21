@@ -1,6 +1,7 @@
+import { CONTENT_REVIEW } from './review';
 import type { ClinicalCase, LesionVisual } from '../types';
 
-const DRAFT = 'draft-needs-expert-review' as const;
+const REVIEWED = CONTENT_REVIEW.status;
 const lesion = (l: Partial<LesionVisual>): LesionVisual => ({
   site: 'occlusal',
   enamelDepth: 0,
@@ -47,7 +48,7 @@ export const CASES: ClinicalCase[] = [
     ],
     takeaway: 'Demineralisation is not cavitation: non-cavitated active lesions are usually managed non-operatively, with sealing as an option.',
     refs: ['fejerskov2015', 'nyvad1999', 'wright2016', 'slayton2018'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'case-cavitated',
@@ -82,7 +83,7 @@ export const CASES: ClinicalCase[] = [
     ],
     takeaway: 'Cavitation into dentin that the patient cannot clean usually calls for a sealed restoration, alongside caries-risk management.',
     refs: ['innes2016', 'schwendicke2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'case-deep',
@@ -117,6 +118,6 @@ export const CASES: ClinicalCase[] = [
     ],
     takeaway: 'In deep lesions of vital teeth, keep the pulp covered: selective (or stepwise) removal plus an excellent seal.',
     refs: ['schwendicke2016', 'ese2019', 'bjorndal2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
 ];

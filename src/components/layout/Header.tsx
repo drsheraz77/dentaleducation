@@ -34,7 +34,7 @@ export function Header() {
         ))}
       </div>
       <div className="header__spacer" />
-      <span className="badge" title="Content is an educational draft and must be verified by qualified dental educators.">
+      <span className="badge" title="Expert-reviewed educational content. Not a diagnostic or clinical decision tool.">
         Educational simulation · not for clinical diagnosis
       </span>
     </header>

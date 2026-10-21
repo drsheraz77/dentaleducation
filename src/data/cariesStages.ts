@@ -1,6 +1,7 @@
+import { CONTENT_REVIEW } from './review';
 import type { CariesStage, ClassificationExample, IcdasCode, LesionVisual } from '../types';
 
-const DRAFT = 'draft-needs-expert-review' as const;
+const REVIEWED = CONTENT_REVIEW.status;
 const CORE_REFS = ['fejerskov2015', 'pitts2017', 'featherstone2004', 'takahashi2011'];
 
 const lesion = (l: Partial<LesionVisual>): LesionVisual => ({
@@ -34,7 +35,7 @@ export const CARIES_STAGES: CariesStage[] = [
     keyPoints: ['Enamel is acellular but chemically dynamic.', 'Saliva buffers acids and supplies calcium and phosphate.'],
     visual: { biofilm: 0, lesion: null, highlight: ['enamel'] },
     refs: CORE_REFS,
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'biofilm',
@@ -53,7 +54,7 @@ export const CARIES_STAGES: CariesStage[] = [
     ],
     visual: { biofilm: 1, lesion: null, highlight: ['biofilm'] },
     refs: ['marsh1994', 'takahashi2011', 'pitts2017'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'acid',
@@ -73,7 +74,7 @@ export const CARIES_STAGES: CariesStage[] = [
     ],
     visual: { biofilm: 1, acidChallenge: true, lesion: lesion({ enamelDepth: 0.08, surfaceTone: 'white', surfaceIntensity: 0.15 }), highlight: ['enamel', 'biofilm'] },
     refs: ['featherstone2004', 'fejerskov2015', 'takahashi2011'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'initial',
@@ -92,7 +93,7 @@ export const CARIES_STAGES: CariesStage[] = [
     ],
     visual: { biofilm: 0.7, lesion: lesion({ enamelDepth: 0.4, surfaceTone: 'white', surfaceIntensity: 0.6 }), highlight: ['lesion', 'enamel'] },
     refs: ['fejerskov2015', 'nyvad1999', 'featherstone2004'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'enamel-progressing',
@@ -108,7 +109,7 @@ export const CARIES_STAGES: CariesStage[] = [
     keyPoints: ['A brown colour does not by itself mean a lesion is active — arrested lesions are often dark and shiny.'],
     visual: { biofilm: 0.6, lesion: lesion({ enamelDepth: 0.9, surfaceTone: 'brown', surfaceIntensity: 0.6 }), highlight: ['lesion', 'enamel'] },
     refs: ['fejerskov2015', 'nanci2018'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'dentin',
@@ -128,7 +129,7 @@ export const CARIES_STAGES: CariesStage[] = [
       highlight: ['lesion', 'dentin'],
     },
     refs: ['fejerskov2015', 'innes2016', 'schwendicke2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'deep',
@@ -148,7 +149,7 @@ export const CARIES_STAGES: CariesStage[] = [
       highlight: ['lesion', 'pulp'],
     },
     refs: ['schwendicke2016', 'ese2019', 'bjorndal2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'advanced',
@@ -168,7 +169,7 @@ export const CARIES_STAGES: CariesStage[] = [
       highlight: ['lesion', 'pulp'],
     },
     refs: ['ese2019', 'bjorndal2019', 'pitts2017'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
 ];
 
@@ -193,7 +194,7 @@ export const CLASSIFICATION_EXAMPLES: ClassificationExample[] = [
     managementNote: 'Typically non-operative: biofilm control, fluoride, and sealing when risk/activity justify it.',
     visual: { biofilm: 0.3, lesion: lesion({ enamelDepth: 0.4, surfaceTone: 'white', surfaceIntensity: 0.7 }) },
     refs: ['ismail2007', 'fejerskov2015'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'moderate-enamel',
@@ -205,7 +206,7 @@ export const CLASSIFICATION_EXAMPLES: ClassificationExample[] = [
     managementNote: 'Options include sealing, or a minimally invasive restoration, depending on activity, depth and risk.',
     visual: { biofilm: 0.3, lesion: lesion({ enamelDepth: 1, dentinDepth: 0.08, surfaceTone: 'brown', surfaceIntensity: 0.6, cavitation: 0.1 }) },
     refs: ['ismail2007', 'innes2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'cavitated-dentin',
@@ -217,7 +218,7 @@ export const CLASSIFICATION_EXAMPLES: ClassificationExample[] = [
     managementNote: 'Usually restorative management with selective carious tissue removal, plus caries-risk management.',
     visual: { biofilm: 0.4, lesion: lesion({ enamelDepth: 1, dentinDepth: 0.4, surfaceTone: 'brown', surfaceIntensity: 0.85, cavitation: 0.4 }) },
     refs: ['ismail2007', 'schwendicke2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'deep-dentin',
@@ -229,7 +230,7 @@ export const CLASSIFICATION_EXAMPLES: ClassificationExample[] = [
     managementNote: 'Pulp assessment is essential; selective removal to soft dentin or stepwise removal is preferred for vital, asymptomatic or reversibly inflamed pulps.',
     visual: { biofilm: 0.4, lesion: lesion({ enamelDepth: 1, dentinDepth: 0.82, surfaceTone: 'brown', surfaceIntensity: 1, cavitation: 0.7, pulpInflammation: 0.3 }) },
     refs: ['ismail2007', 'ese2019', 'schwendicke2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'root',
@@ -250,6 +251,6 @@ export const CLASSIFICATION_EXAMPLES: ClassificationExample[] = [
       camera: 'mesial',
     },
     refs: ['ismail2007', 'fejerskov2015', 'slayton2018'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
 ];

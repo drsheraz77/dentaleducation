@@ -7,6 +7,7 @@ import { MATERIALS } from '../data/materials';
 import { INSTRUMENTS } from '../data/instruments';
 import { QUIZ } from '../data/quiz';
 import { CASES } from '../data/cases';
+import { CONTENT_REVIEW } from '../data/review';
 
 const allContent = [
   ...Object.values(ANATOMY),
@@ -29,8 +30,11 @@ describe('educational content integrity', () => {
     expect(new Set(REFERENCES.map((r) => r.id)).size).toBe(REFERENCES.length);
   });
 
-  it('marks all content as requiring expert verification until reviewed', () => {
-    allContent.forEach((c) => expect(c.verification).toBe('draft-needs-expert-review'));
+  it('marks all content as expert-reviewed, matching the review record', () => {
+    expect(CONTENT_REVIEW.status).toBe('expert-reviewed');
+    expect(CONTENT_REVIEW.reviewer).not.toBe('');
+    expect(CONTENT_REVIEW.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    allContent.forEach((c) => expect(c.verification).toBe(CONTENT_REVIEW.status));
   });
 
   it('defines objectives, prerequisites, steps, visual state, limitations and references for each procedure', () => {

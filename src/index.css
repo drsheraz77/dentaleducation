@@ -736,6 +736,11 @@ input {
   color: var(--warn);
 }
 
+.verify--ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
 .steps-list {
   counter-reset: s;
   list-style: none;

@@ -1,3 +1,4 @@
+import { CONTENT_REVIEW } from './review';
 import type {
   AdhesiveProtocol,
   AdhesiveProtocolId,
@@ -7,7 +8,7 @@ import type {
   RestorativeMaterial,
 } from '../types';
 
-const DRAFT = 'draft-needs-expert-review' as const;
+const REVIEWED = CONTENT_REVIEW.status;
 
 export const COMPARISON_LABELS: Record<ComparisonKey, string> = {
   bonding: 'Retention / bonding',
@@ -36,7 +37,7 @@ export const ADHESIVE_PROTOCOLS: AdhesiveProtocol[] = [
       'Phosphoric acid etches enamel and dentin, is rinsed off, then primer and adhesive (separate or combined) infiltrate the demineralised dentin to form a hybrid layer.',
     steps: ['Etch enamel and dentin', 'Rinse thoroughly', 'Dry enamel, avoid over-drying dentin (system-dependent)', 'Apply primer/adhesive', 'Air-thin and light-cure'],
     refs: ['vanmeerbeek2020', 'craig2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'self-etch',
@@ -45,7 +46,7 @@ export const ADHESIVE_PROTOCOLS: AdhesiveProtocol[] = [
       'Acidic monomers condition and prime simultaneously, without a separate rinse. Dentin smear layer is modified rather than removed; enamel bonding may be less effective than with phosphoric acid.',
     steps: ['Apply self-etch primer/adhesive with agitation', 'Air-thin as instructed', 'Light-cure'],
     refs: ['vanmeerbeek2020'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'selective-enamel-etch',
@@ -54,7 +55,7 @@ export const ADHESIVE_PROTOCOLS: AdhesiveProtocol[] = [
       'Phosphoric acid is applied to enamel margins only, then a self-etch or universal adhesive is used on enamel and dentin.',
     steps: ['Etch enamel margins only', 'Rinse and dry', 'Apply self-etch/universal adhesive', 'Air-thin and light-cure'],
     refs: ['vanmeerbeek2020'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
 ];
 
@@ -125,7 +126,7 @@ export const MATERIALS: RestorativeMaterial[] = [
       { id: 'polish', title: 'Polishing', description: 'Polish with a graded sequence to a smooth, glossy surface.', rationale: 'Smooth surfaces retain less biofilm and stain.', visual: { restoration: { material: 'composite', increments: 9, totalIncrements: 1, set: 1, finished: true }, instrument: { id: 'polishingDisc', motion: 'rotate' } } },
     ],
     refs: ['ferracane2011', 'vanmeerbeek2020', 'craig2019', 'sturdevant2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'gic',
@@ -174,7 +175,7 @@ export const MATERIALS: RestorativeMaterial[] = [
       { id: 'protect', title: 'Protection and finishing', description: 'Apply a surface protection coat where recommended, check occlusion, and remove gross excess. Further finishing may be deferred.', rationale: 'Protects the immature cement from moisture imbalance.', visual: { isolation: 'none', restoration: { material: 'gic', increments: 1, totalIncrements: 1, set: 0.9, finished: true, coated: true } } },
     ],
     refs: ['sidhu2016', 'craig2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'rmgic',
@@ -217,7 +218,7 @@ export const MATERIALS: RestorativeMaterial[] = [
       { id: 'mature', title: 'Continued maturation', description: 'The acid–base reaction continues after light curing.', rationale: 'Dual setting distinguishes RMGIC from both composite and conventional GIC.', visual: { isolation: 'none', restoration: { material: 'rmgic', increments: 1, totalIncrements: 1, set: 1, finished: true } } },
     ],
     refs: ['sidhu2016', 'craig2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'amalgam',
@@ -265,7 +266,7 @@ export const MATERIALS: RestorativeMaterial[] = [
       { id: 'burnish', title: 'Burnish and check occlusion', description: 'Burnish margins and check occlusion gently while the material gains strength.', rationale: 'Early heavy loading can fracture the restoration.', visual: { isolation: 'none', restoration: { material: 'amalgam', increments: 9, totalIncrements: 1, set: 0.8, finished: true }, instrument: { id: 'carver', motion: 'scrape' } } },
     ],
     refs: ['craig2019', 'sturdevant2019', 'minamata2013'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'calciumSilicate',
@@ -312,7 +313,7 @@ export const MATERIALS: RestorativeMaterial[] = [
       { id: 'review', title: 'Review', description: 'Review symptoms and pulp sensibility at follow-up, with radiographs as indicated.', rationale: 'Outcomes of vital pulp therapy must be monitored.', visual: { isolation: 'none', liner: { material: 'calciumSilicate', set: 1 }, restoration: { material: 'composite', increments: 9, totalIncrements: 1, set: 1, finished: true }, highlight: ['pulp', 'liner'] }, camera: 'section' },
     ],
     refs: ['ese2019', 'bjorndal2019', 'parirokh2010'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
 ];
 

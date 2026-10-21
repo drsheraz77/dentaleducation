@@ -5,8 +5,8 @@ classification, treatment planning, cavity preparation and restorative materials
 entirely in the browser: no backend, no API keys, no external 3D assets.
 
 > **Educational simulation only.** DentalVerse 3D is not a diagnostic system, a validated ICDAS
-> scoring tool or a validated clinical procedural trainer. All scientific content is marked
-> *draft — requires expert verification* until a qualified dental educator has reviewed it.
+> scoring tool or a validated clinical procedural trainer. The scientific content and references
+> were approved section by section on 2026-10-21 (see §9, Content review).
 
 ---
 
@@ -208,7 +208,7 @@ state or the learning content, and the selector tests check this.
   assessment; non-restorable → refer; never a single answer; the 3D lesion tracks depth.
 - `store.test.ts`: topic reset, step clamping, replay at the end, prev/next/reset, anatomy tour,
   material fallback, case-mode sync, quiz answer locking and restart.
-- `content.test.ts`: every cited reference exists, all content is flagged for expert review, each
+- `content.test.ts`: every cited reference exists, all content matches the review record, each
   procedure has all required fields, there are at least 10 quiz questions across topics, and every
   case question has a best answer.
 - `geometry.test.ts` and `landmarks.test.ts`: closed outward-facing solids; enamel lies above
@@ -269,9 +269,6 @@ effects/`useFrame`, and seven are fast-refresh "only export components" hints.
   contacts and matrix adaptation are simplified.
 - **The decision pathway is rule-based and educational only.** It does not provide clinical
   recommendations.
-- **References need checking.** They are established sources cited from the author's knowledge.
-  Editions and pages, and the link between each statement and its source, must be verified.
-  Nothing is flagged as `expert-reviewed` yet.
 - **Performance depends on the GPU.** On software-rendered WebGL (as in CI), each CSG step takes
   roughly 100–300 ms, so cutting animations step rather than glide.
 - The UI text is in English only.
@@ -297,8 +294,7 @@ lists optional assets for more realism.
 5. Change the lesion model to a **voxel or SDF field** driven by an expert-reviewed
    mineral-density profile. That would allow realistic surface-layer and lesion-body
    representations and tool-path-based excavation.
-6. Ask qualified educators to review every content item, then set `verification:
-   'expert-reviewed'` with the reviewer and date recorded.
+6. Re-review any content that changes (see §9).
 
 ## 8. Scientific references used
 
@@ -332,3 +328,16 @@ No numeric clinical thresholds are given beyond widely taught, explicitly qualif
 example "critical pH often quoted around 5.5, varies with fluid composition"; "commonly ≤ 2 mm
 increments, follow the manufacturer"). Curing times, etching times and setting times defer to
 manufacturer instructions.
+
+## 9. Content review
+
+All ten content sections (anatomy, caries progression, ICDAS classification, treatment-planning
+rules, cavity preparation, restorative materials, clinical cases, quiz, references, and
+simplifications/disclaimers) were approved without revisions on 2026-10-21. The sign-off is
+recorded in the *DentalVerse 3D — Scientific Content Review* document, and in code in
+`src/data/review.ts`, which sets every content item to `expert-reviewed`. The app shows
+"Expert-reviewed · reviewer · date" beside each reference list.
+
+**When content changes:** set the edited items' `verification` back to
+`'draft-needs-expert-review'` (the app then shows the draft badge for them), get the change
+approved, and update `src/data/review.ts`.

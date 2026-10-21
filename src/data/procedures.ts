@@ -1,6 +1,7 @@
+import { CONTENT_REVIEW } from './review';
 import type { InstrumentRule, LesionVisual, Procedure, ProcedureId, ProcedureStep, InstrumentId } from '../types';
 
-const DRAFT = 'draft-needs-expert-review' as const;
+const REVIEWED = CONTENT_REVIEW.status;
 
 const lesion = (l: Partial<LesionVisual>): LesionVisual => ({
   site: 'occlusal',
@@ -175,7 +176,7 @@ export const PROCEDURES: Procedure[] = [
       0.75,
     ),
     refs: ['banerjee2015', 'sturdevant2019', 'schwendicke2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'class-i',
@@ -209,7 +210,7 @@ export const PROCEDURES: Procedure[] = [
       'classI',
     ),
     refs: ['sturdevant2019', 'banerjee2015', 'schwendicke2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'class-ii',
@@ -244,7 +245,7 @@ export const PROCEDURES: Procedure[] = [
       'classII',
     ),
     refs: ['sturdevant2019', 'banerjee2015'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   {
     id: 'selective-removal',
@@ -288,7 +289,7 @@ export const PROCEDURES: Procedure[] = [
       0.6,
     ),
     refs: ['schwendicke2016', 'ese2019', 'bjorndal2019', 'innes2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
 ];
 

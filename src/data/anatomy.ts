@@ -1,6 +1,7 @@
+import { CONTENT_REVIEW } from './review';
 import type { AnatomyEntry, StructureId } from '../types';
 
-const DRAFT = 'draft-needs-expert-review' as const;
+const REVIEWED = CONTENT_REVIEW.status;
 
 export const ANATOMY: Record<StructureId, AnatomyEntry> = {
   enamel: {
@@ -19,7 +20,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     clinicalRelevance:
       'Unsupported enamel is brittle. Preparation design aims to preserve sound enamel, and bonded restorations rely on etched enamel for a durable seal.',
     refs: ['nanci2018', 'nelson2020', 'fejerskov2015'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   dentin: {
     id: 'dentin',
@@ -36,7 +37,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     clinicalRelevance:
       'Different zones of carious dentin (soft/infected vs firmer/affected) guide carious tissue removal strategies. Dentin bonding is more technique-sensitive than enamel bonding.',
     refs: ['nanci2018', 'fejerskov2015', 'schwendicke2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   pulp: {
     id: 'pulp',
@@ -52,7 +53,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     clinicalRelevance:
       'Pulp status (history, sensibility testing, radiographs) strongly influences management of deep caries. Avoiding unnecessary pulp exposure is a key aim of selective caries removal.',
     refs: ['nanci2018', 'ese2019', 'bjorndal2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   rootCanal: {
     id: 'rootCanal',
@@ -66,7 +67,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
       'Untreated advanced caries can lead to pulp necrosis and infection of the root canal system, with possible apical periodontitis.',
     clinicalRelevance: 'Root canal treatment addresses infection of this space (planned future endodontics module).',
     refs: ['nelson2020', 'nanci2018'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   cementum: {
     id: 'cementum',
@@ -80,7 +81,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
       'Exposed root surfaces (for example after gingival recession) are susceptible to root caries, which can progress in a less-mineralised substrate.',
     clinicalRelevance: 'Root caries is more common in older adults and in people with reduced salivary flow.',
     refs: ['nanci2018', 'fejerskov2015'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   root: {
     id: 'root',
@@ -90,7 +91,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     cariesRelevance: 'Becomes involved in root caries once cementum is lost or breached.',
     clinicalRelevance: 'Root form influences restorability, endodontic access and extraction.',
     refs: ['nelson2020'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   pdl: {
     id: 'pdl',
@@ -101,7 +102,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     cariesRelevance: 'Not directly involved in caries, but apical spread of pulpal infection affects the periapical tissues.',
     clinicalRelevance: 'Widening at the apex on a radiograph can indicate periapical inflammation.',
     refs: ['nanci2018'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   bone: {
     id: 'bone',
@@ -111,7 +112,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     cariesRelevance: 'Bone loss with periodontal disease and recession may expose root surfaces to root caries risk.',
     clinicalRelevance: 'Bone support influences long-term prognosis of a tooth.',
     refs: ['nanci2018'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   gingiva: {
     id: 'gingiva',
@@ -122,7 +123,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     clinicalRelevance:
       'Gingival health and bleeding affect moisture control — essential for adhesive restorations — and the position of proximal margins.',
     refs: ['nanci2018', 'sturdevant2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   lesion: {
     id: 'lesion',
@@ -135,7 +136,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     cariesRelevance: 'Lesion activity, cavitation and depth together guide management.',
     clinicalRelevance: 'The 3D lesion here is schematic — real lesions are irregular and are assessed clinically and radiographically.',
     refs: ['fejerskov2015', 'innes2016'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   biofilm: {
     id: 'biofilm',
@@ -146,7 +147,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
       'Frequent sugar intake favours acid-producing and acid-tolerant organisms, shifting the biofilm towards a cariogenic state.',
     clinicalRelevance: 'Disrupting biofilm and reducing sugar frequency are central to caries management.',
     refs: ['marsh1994', 'takahashi2011'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   restoration: {
     id: 'restoration',
@@ -156,7 +157,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     cariesRelevance: 'A restoration does not cure the caries disease; risk factors still need management.',
     clinicalRelevance: 'Margins are susceptible to secondary/recurrent caries if biofilm control is poor.',
     refs: ['sturdevant2019', 'craig2019'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
   liner: {
     id: 'liner',
@@ -166,7 +167,7 @@ export const ANATOMY: Record<StructureId, AnatomyEntry> = {
     cariesRelevance: 'Used in vital pulp therapy approaches for deep lesions.',
     clinicalRelevance: 'Indications are case-dependent; it is covered by a definitive restoration.',
     refs: ['ese2019', 'parirokh2010'],
-    verification: DRAFT,
+    verification: REVIEWED,
   },
 };
 
