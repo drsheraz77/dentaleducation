@@ -566,6 +566,41 @@ await check('S11. Without WebGL the studio explains itself and the lesson still 
   return `fallback message shown, lesson advanced to "${heading}", no page errors`;
 });
 
+await check('G1. Caries Quest: play a round, score updates, results and replay', async () => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('button', { name: /caries quest/i }).click();
+  await settle(2500);
+  const info = page.locator('.info');
+  await info.getByRole('button', { name: 'Start game' }).click();
+  await settle(2500);
+  const ext = await shot('G1-case-external');
+  const order = await store('st.game.order');
+  const before = await page.getByTestId('quest-points').innerText();
+  await info.getByRole('group', { name: 'ICDAS code' }).getByRole('button').nth(0).click();
+  await settle(2500);
+  assert((await store('st.viewMode')) === 'section', 'detection did not open the cross-section');
+  const sec = await shot('G1-case-section');
+  assert(differs(ext, sec) > 0.05, 'cross-section did not change the view');
+  await info.getByRole('group', { name: 'Management' }).getByRole('button').nth(0).click();
+  const fb = await info.getByRole('status').allInnerTexts();
+  assert(fb.length === 2, `expected detection and management feedback, saw ${fb.length}`);
+  for (let i = 0; i < order.length; i++) {
+    if (i > 0) {
+      await info.getByRole('group', { name: 'ICDAS code' }).getByRole('button').nth(i % 5).click();
+      await info.getByRole('group', { name: 'Management' }).getByRole('button').nth(i % 4).click();
+    }
+    await info.getByRole('button', { name: /next case|see results/i }).click();
+  }
+  const final = await page.getByTestId('quest-final').innerText();
+  const board = await page.getByTestId('quest-points').innerText();
+  assert(final.split(/\s/)[0] === board.replace(/\D/g, ''), `results ${final} vs scoreboard ${board}`);
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/G1-results.png` });
+  await info.getByRole('button', { name: 'Play again' }).click();
+  const fresh = await store('st.game.index');
+  assert(fresh === 0, 'play again did not restart');
+  return `scoreboard ${before.trim()} → ${board.trim()}; results "${final.replace(/\s+/g, ' ')}"; detection opens the section; replay restarts`;
+});
+
 await check('15. No unresolved critical runtime errors in the console', async () => {
   assert(consoleErrors.length === 0, consoleErrors.slice(0, 5).join(' | '));
   return 'console clean';

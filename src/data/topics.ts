@@ -9,5 +9,6 @@ export const TOPICS: { id: TopicId; label: string; short: string }[] = [
   { id: 'preparation', label: 'Cavity preparation', short: 'Preparation' },
   { id: 'materials', label: 'Restorative materials', short: 'Materials' },
   { id: 'cases', label: 'Clinical cases', short: 'Cases' },
+  { id: 'game', label: 'Caries Quest (game)', short: 'Game' },
   { id: 'quiz', label: 'Knowledge assessment', short: 'Quiz' },
 ];

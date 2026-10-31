@@ -13,6 +13,7 @@ export type TopicId =
   | 'preparation'
   | 'materials'
   | 'cases'
+  | 'game'
   | 'quiz';
 
 export type LearningMode = 'guided' | 'explore' | 'case';

@@ -5,6 +5,37 @@ Chromium 141.0.7390.37 with **SwiftShader (software) WebGL**, so there was no GP
 was produced by the commands shown; none are estimates. Timings on a machine with a GPU will
 differ.
 
+## Update 2026-10-25 — Caries Quest game
+
+Same container and browser. Measured after adding the game:
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | passes |
+| `npm test` | **15 files, 95 tests, all passing** (12 new in `cariesQuest.test.tsx`) |
+| `npm run lint` | 0 errors, 29 warnings (unchanged; none from the game files) |
+| `npm run e2e` | **26/26 checks passed** (new check G1) |
+| Main bundle `index-*.js` | 405.28 kB (gzip 121.75 kB), up from 388.17 kB (116.98 kB) |
+
+`cariesQuest.test.tsx` checks:
+- Every case is a draft, and its keyed ICDAS code matches its findings.
+- The keyed management option is graded "best" by the decision pathway, and none of the other
+  three options is.
+- Option wording matches the pathway titles exactly, and cited references exist.
+- A perfect run scores the maximum with streak bonuses; partial credit breaks the streak; wrong
+  answers score zero.
+- The shuffle keeps every case once.
+- Answers lock, management needs detection first, and detection opens the cross-section.
+- The 3D lesion comes from the reviewed diagnosis mapping, with no plaque.
+- A full game played through the UI ends on the top rank with a matching score.
+
+G1 (browser):
+- Start the game; detection opens the cross-section (the view changes).
+- Both feedback messages appear.
+- Play all 8 cases; the results total equals the scoreboard (375 / 2,550 in the final run, with
+  deliberately mixed answers).
+- "Play again" restarts.
+
 ## 1. Type-check, build and lint
 
 | Command | Result |

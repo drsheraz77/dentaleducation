@@ -20,6 +20,7 @@ import { QUIZ } from '../data/quiz';
 import { evaluateDiagnosis } from '../modules/diagnosis/decisionEngine';
 import { STIMULI } from '../data/dentinTubules';
 import { LESSON_STAGES } from '../data/studio/cariesLesson';
+import { QUEST_CASE_BY_ID } from '../data/game/cariesQuest';
 
 /** The anatomy module's longitudinal section, laid out like a textbook figure (callouts, brackets, light page). */
 export function isTextbookView(s: Pick<SimState, 'topic' | 'viewMode'>): boolean {
@@ -277,6 +278,15 @@ export function deriveScene(s: SimState): SceneDescription {
     }
     case 'cases':
       return { teeth: [{ visual: mergeVisual(CASES[s.caseIndex].visual) }], notice: { tone: 'info', text: 'Simulated, fictional case for learning.' }, show3D: true };
+    case 'game': {
+      const c = QUEST_CASE_BY_ID[s.game.order[Math.min(s.game.index, s.game.order.length - 1)]];
+      return {
+        // ICDAS is scored on a cleaned, dried tooth, so the plaque layer is not shown.
+        teeth: [{ visual: mergeVisual(evaluateDiagnosis(c.input).visual, { biofilm: 0 }) }],
+        notice: { tone: 'info', text: 'Simulated, fictional case: tooth shown cleaned and dried. The 3D lesion is schematic.' },
+        show3D: true,
+      };
+    }
     case 'quiz':
       return { teeth: [], notice: null, show3D: false };
     case 'studio':

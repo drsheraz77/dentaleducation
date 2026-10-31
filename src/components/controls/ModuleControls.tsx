@@ -10,6 +10,7 @@ import { chosenInstrument, instrumentKey } from '../../state/selectors';
 import { LESSON_STAGES } from '../../data/studio/cariesLesson';
 import { AnatomyLayerControls, CompareStageControls } from '../studio/AnatomyLayerControls';
 import { GuidedLessonControls } from '../studio/GuidedLessonControls';
+import { CariesQuestScoreboard } from '../game/CariesQuestPanel';
 import type { AdhesiveProtocolId, MaterialId, ProcedureId } from '../../types';
 
 function AnatomyViewSwitch() {
@@ -244,6 +245,12 @@ export function ModuleControls() {
               </button>
             ))}
           </div>
+        </div>
+      );
+    case 'game':
+      return (
+        <div className="module-controls" aria-label="Caries Quest scoreboard">
+          <CariesQuestScoreboard />
         </div>
       );
     default:

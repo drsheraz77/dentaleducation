@@ -163,6 +163,20 @@ not a competence assessment.
   the results screen breaks the score down by topic. It states clearly that a quiz score is not
   evidence of clinical competence.
 
+### Caries Quest (game) — `draft_pending_review`
+A short game on caries detection and management, meant to motivate practice.
+- 8 fictional patients in random order. Each has findings (visual exam on a cleaned, dried tooth,
+  radiograph, symptoms, risk) and the 3D tooth.
+- **Detect:** choose the ICDAS code (+100). After the call, the 3D view opens in cross-section so
+  the lesion depth can be checked.
+- **Manage:** choose the best option for the patient (+150; +75 for an option that can be
+  considered but is not the best fit). Answers are graded by the reviewed decision pathway in
+  `modules/diagnosis/decisionEngine.ts`, and its reasoning is shown as feedback.
+- Streak bonus for consecutive perfect cases (up to +100 each), a running scoreboard, a final rank,
+  a case-by-case breakdown, and a personal best kept in the browser.
+- Only the case vignettes and the choice of options are new content; they await review
+  (`CLINICAL_REVIEW_CHECKLIST.md`, section H).
+
 ---
 
 ## 3. Architecture
@@ -297,10 +311,10 @@ cavity). That split is meant to support the following:
 ## 4. Test results (from the final run)
 
 Full, measured results of the studio upgrade are in **`TEST_RESULTS.md`**:
-- Unit and UI tests: **14 files, 83 tests**, all passing.
-- Browser acceptance: **25/25 checks** passing. That is the 15 original checks plus 11 studio
-  checks for loading, camera, picking, layers, stages, comparison, knowledge check, keyboard,
-  phone, missing model and no-WebGL.
+- Unit and UI tests: **15 files, 95 tests**, all passing.
+- Browser acceptance: **26/26 checks** passing. That is the 15 original checks, 11 studio checks
+  for loading, camera, picking, layers, stages, comparison, knowledge check, keyboard, phone,
+  missing model and no-WebGL, and 1 Caries Quest check.
 - Bundle sizes and model-processing timings.
 
 The rest of this section describes the original modules.
@@ -480,6 +494,10 @@ dentin-tubule view (stimuli, response model and hydrodynamic summary). It is lis
 questions, the "Lamina dura" anatomy entry and the representation of the scanned asset are
 `draft_pending_review`. The app shows the draft badge for them. `CLINICAL_REVIEW_CHECKLIST.md`
 lists every item to review and has a sign-off table.
+
+**Caries Quest — not reviewed.** The game's case vignettes, keyed ICDAS codes and the
+management options offered per case are `draft_pending_review` (checklist section H). The
+grading itself reuses the reviewed decision pathway.
 
 **When content changes:** set the edited items' `verification` back to
 `'draft_pending_review'` (the app then shows the draft badge for them), get the change

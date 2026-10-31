@@ -1339,3 +1339,36 @@ table.compare th[scope='row'] {
   font-size: 12px;
   margin-right: 4px;
 }
+
+/* Caries Quest */
+.quest-board {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+.quest-progress {
+  flex: 1 1 120px;
+  min-width: 80px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border, #e2e8f0);
+  overflow: hidden;
+}
+.quest-progress i {
+  display: block;
+  height: 100%;
+  background: var(--accent, #2563eb);
+  transition: width 0.3s ease;
+}
+.quest-score {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 4px 0 8px;
+}
+.quest-score small {
+  font-size: 15px;
+  font-weight: 400;
+  opacity: 0.7;
+}

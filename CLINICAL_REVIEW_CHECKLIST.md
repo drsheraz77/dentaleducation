@@ -1,4 +1,4 @@
-# Clinical review checklist — Caries Learning Studio
+# Clinical review checklist — Caries Learning Studio and Caries Quest
 
 **Status: `draft_pending_review`.** No qualified person has reviewed anything listed here.
 The earlier sign-off of 2026-10-21 (README §9) covers the procedural modules and does **not**
@@ -88,6 +88,30 @@ For each stage, check the objective, "What you see", the explanation, the split 
 - [ ] G1. The "not time-calibrated / not diagnostic / not a competence assessment" notice is shown on every stage.
 - [ ] G2. The source attribution and the non-commercial licence notice are visible in the info panel.
 
+## H. Caries Quest game (`src/data/game/cariesQuest.ts`)
+
+The game grades management with the reviewed decision pathway (`evaluateDiagnosis`): "consider"
+or "refer" = best fit (+150), "may consider" = partial (+75), not listed or "generally not
+indicated" = 0. A unit test checks that the keyed option is the only best fit among the four
+shown. Detection uses the reviewed ICDAS codes (1 and 2 grouped). New content to review:
+
+| Case | Key findings (summary) | Keyed ICDAS | Keyed management | Other options shown |
+| --- | --- | --- | --- | --- |
+| Chalky fissure, frequent soft drinks | Chalky opacity visible wet, beyond fissure; intact; no dentin radiolucency; high risk | 1–2 | Sealant / sealing the lesion | Restoration (firm dentin); non-selective removal; monitor |
+| Brown, shiny fissure in a low-risk adult | Brown, hard, shiny, confined to fissure; no plaque; no radiolucency | 1–2 | Monitor (arrested lesion) | Restoration; selective removal (soft dentin); endodontic assessment |
+| Small break in an opaque fissure | Localised enamel breakdown, no dentin or shadow; enamel radiolucency | 3 | Sealant / sealing the lesion | Monitor; non-selective removal; endodontic assessment |
+| Grey shadow under intact enamel | Shadow through intact enamel; middle-third dentin radiolucency; active | 4 | Sealant / sealing the lesion | Restoration (partial credit); monitor; endodontic assessment |
+| Food trapping in a cavity | Cavity with dentin visible; middle-third radiolucency; normal pulp | 5 | Restoration with selective removal to firm dentin | Sealant; monitor; endodontic assessment |
+| Deep lesion, brief pain with cold | Extensive deep cavity; short cold response; inner-quarter radiolucency | 6 | Selective removal to soft dentin + sealed restoration | Non-selective removal (0); stepwise removal (partial); sealant |
+| Deep cavity with night pain | Extensive cavity; spontaneous, lingering pain | 6 | Endodontic assessment and pulp-directed treatment | Selective removal; sealant; monitor |
+| Little tooth structure left | Most of crown lost; subgingival caries; non-restorable | 6 | Discuss extraction or specialist opinion | Restoration; sealant; selective removal |
+
+- [ ] H1. Each vignette is clinically coherent and consistent with its keyed ICDAS code.
+- [ ] H2. The keyed management is the best teaching answer, and the other options are fair distractors.
+- [ ] H3. Keying sealing (rather than restoration) for the non-cavitated ICDAS 4 lesion reaching the middle third of dentin is acceptable, with restoration given partial credit.
+- [ ] H4. The scoring, streaks and ranks ("Cariology Ace", "Confident Clinician", "Caries Detective", "Dental Explorer") and the formative-only disclaimer are appropriate.
+- [ ] H5. Showing the tooth without plaque ("cleaned and dried") and opening the cross-section after the detection call is appropriate.
+
 ---
 
 ## Sign-off
@@ -101,3 +125,4 @@ For each stage, check the objective, "What you see", the explanation, the split 
 | E | | | | |
 | F | | | | |
 | G | | | | |
+| H | | | | |

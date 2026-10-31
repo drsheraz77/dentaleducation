@@ -18,6 +18,8 @@ import { QUIZ } from '../data/quiz';
 import { getTimeline } from './selectors';
 import { COMPARABLE_STAGES, DEFAULT_COMPARE, LESSON_STAGES, type ComparableStage } from '../data/studio/cariesLesson';
 import { LOWER_MOLAR_47, type LayerId } from '../data/studio/assets';
+import { QUEST_CASES, type IcdasBand, type PathwayId } from '../data/game/cariesQuest';
+import { shuffled, type QuestAnswer } from '../modules/game/cariesQuest';
 
 export type MaterialsTab = 'workflow' | 'compare';
 export type AnatomyView = 'section' | 'tubules';
@@ -74,6 +76,8 @@ export interface SimState {
   autoRotate: boolean;
   studioCompare: ComparableStage[];
   studioAnswers: Record<string, number>;
+  /** Caries Quest */
+  game: { started: boolean; order: string[]; index: number; answers: Record<string, QuestAnswer> };
 }
 
 export interface SimActions {
@@ -122,6 +126,10 @@ export interface SimActions {
   toggleCompareStage: (id: ComparableStage) => void;
   answerStudio: (questionId: string, option: number) => void;
   resetStudioAnswers: () => void;
+  startGame: (random?: () => number) => void;
+  answerGameDetect: (caseId: string, band: IcdasBand) => void;
+  answerGameManage: (caseId: string, pathway: PathwayId) => void;
+  nextGameCase: () => void;
 }
 
 export type Store = SimState & SimActions;
@@ -160,6 +168,7 @@ export const initialState: SimState = {
   autoRotate: false,
   studioCompare: [...DEFAULT_COMPARE],
   studioAnswers: {},
+  game: { started: false, order: QUEST_CASES.map((c) => c.id), index: 0, answers: {} },
 };
 
 const clampStep = (s: SimState, step: number) => {
@@ -285,4 +294,29 @@ export const useSim = create<Store>()((set, get) => ({
   answerStudio: (questionId, option) =>
     set((s) => (questionId in s.studioAnswers ? {} : { studioAnswers: { ...s.studioAnswers, [questionId]: option } })),
   resetStudioAnswers: () => set({ studioAnswers: {} }),
+  startGame: (random) =>
+    set((s) => ({
+      game: { started: true, order: shuffled(QUEST_CASES.map((c) => c.id), random), index: 0, answers: {} },
+      viewMode: 'external',
+      cameraResetToken: s.cameraResetToken + 1,
+    })),
+  // Answers lock once given. After detection the cut face is shown, so the depth can be compared.
+  answerGameDetect: (caseId, band) =>
+    set((s) =>
+      s.game.answers[caseId]?.detect !== undefined
+        ? {}
+        : { game: { ...s.game, answers: { ...s.game.answers, [caseId]: { ...s.game.answers[caseId], detect: band } } }, viewMode: 'section' },
+    ),
+  answerGameManage: (caseId, pathway) =>
+    set((s) =>
+      s.game.answers[caseId]?.detect === undefined || s.game.answers[caseId]?.manage !== undefined
+        ? {}
+        : { game: { ...s.game, answers: { ...s.game.answers, [caseId]: { ...s.game.answers[caseId], manage: pathway } } } },
+    ),
+  nextGameCase: () =>
+    set((s) => ({
+      game: { ...s.game, index: Math.min(s.game.order.length, s.game.index + 1) },
+      viewMode: 'external',
+      cameraResetToken: s.cameraResetToken + 1,
+    })),
 }));

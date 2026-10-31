@@ -102,7 +102,9 @@ function SceneContent({ scene, anchors }: { scene: SceneDescription; anchors: La
       ? 'full'
       : operative
         ? 'working'
-        : 'default';
+        : state.topic === 'game'
+          ? 'occlusal' // detection: look straight into the fissure, where the lesion is
+          : 'default';
   const preset = compare ? 'compare' : guided ? (primary?.camera ?? fallback) : fallback;
   const token = guided
     ? `${state.topic}:${state.step}:${state.cameraResetToken}:${state.viewMode}`

@@ -4,6 +4,7 @@ import { MaterialsInfo, PreparationInfo } from '../education/ProcedureInfo';
 import { DiagnosisPanel } from '../education/DiagnosisPanel';
 import { CasePanel } from '../assessment/CasePanel';
 import { ClinicalAnnotationPanel } from '../studio/ClinicalAnnotationPanel';
+import { CariesQuestPanel } from '../game/CariesQuestPanel';
 import { QUIZ } from '../../data/quiz';
 
 function QuizInfo() {
@@ -41,6 +42,8 @@ export function InfoPanel() {
         return <MaterialsInfo />;
       case 'cases':
         return <CasePanel />;
+      case 'game':
+        return <CariesQuestPanel />;
       case 'quiz':
         return <QuizInfo />;
     }
