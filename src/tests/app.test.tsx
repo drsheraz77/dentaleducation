@@ -169,7 +169,9 @@ describe('diagnosis module', () => {
     await renderApp();
     await user.click(screen.getByRole('button', { name: /diagnosis/i }));
     expect(screen.queryByTestId('pathway-selective')).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByRole('combobox', { name: /cavitation status/i }), 'cavitated');
+    // Cavitation follows the ICDAS code in the pathway.
+    await user.selectOptions(screen.getByRole('combobox', { name: /icdas code/i }), '6');
+    expect(screen.getByTestId('derived-cavitation')).toHaveTextContent(/cavitated into dentin/i);
     await user.selectOptions(screen.getByRole('combobox', { name: /estimated lesion depth/i }), 'deep-dentin');
     expect(screen.getByTestId('pathway-selective')).toBeInTheDocument();
     expect(probe()[0].lesion.dentinDepth).toBeGreaterThan(0.5);

@@ -10,6 +10,7 @@ import { useSim } from '../state/store';
 import { deriveScene, getTimeline, isTextbookView, isTubulesView } from '../state/selectors';
 import { TubulesView } from '../modules/anatomy/TubulesView';
 import { TISSUE_COLORS } from '../three/colors';
+import { PulpProximity } from '../components/controls/PulpProximity';
 
 // three.js, React Three Fiber and the CSG engine are loaded on demand so the UI shell appears immediately.
 const ToothScene = lazy(() => import('../three/ToothScene').then((m) => ({ default: m.ToothScene })));
@@ -121,6 +122,7 @@ export default function App() {
                   <SceneToolbar />
                   <Notice />
                   <Legend />
+                  <PulpProximity />
                 </>
               )}
               <GuidedBanner />

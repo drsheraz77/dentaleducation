@@ -118,12 +118,36 @@ not a competence assessment.
 - Five illustrative examples: initial enamel (ICDAS 1–2), moderate enamel (3), cavitated dentinal
   (5), deep dentinal (6), and root caries (with gingival recession). Each comes with an ICDAS code
   summary table and an explicit "not a validated diagnostic tool" notice.
+- *(2026-11-02, draft)*
+  - ICDAS codes 0–6 in the reviewer's wording, each with a schematic illustration (occlusal view
+    and section).
+  - An **activity assessment** guide: colour alone never decides; it compares texture, lustre,
+    plaque stagnation and adjacent gingiva for active and inactive lesions.
+  - A **primary vs permanent** comparison table.
 
 ### Diagnosis and treatment planning
-- Seven variables: activity, cavitation, depth, symptoms, pulp assessment, caries risk and
-  restorability. They drive a rule-based **educational** pathway that lists several options (each
-  marked consider / may consider / generally not indicated / assess-refer) with its reasoning and
-  references, plus alerts. The 3D lesion updates to match the selections.
+- *(Upgraded 2026-11-02, draft.)* A guided **caries decision pathway** in eight numbered steps:
+  1. lesion detection (dentition, surface)
+  2. severity (ICDAS 0–6 with its schematic, plus radiographic depth)
+  3. activity
+  4. caries risk
+  5. cavitation (derived from the ICDAS code) and cleansability
+  6. pulp assessment and restorability
+  7. management
+  8. follow-up
+- Options are grouped as preventive, non-operative, micro-invasive, restorative, pulp-related, or
+  extraction/referral. Each is marked consider / may consider / generally not indicated /
+  assess-refer, with reasoning and references.
+- New options:
+  - sealing of sound surfaces at high risk
+  - resin infiltration for proximal lesions
+  - silver diamine fluoride
+  - the Hall technique (primary molars)
+  - non-restorative cavity control for cleansable cavities
+- Alerts flag disagreement between visual and radiographic findings, deep lesions that need pulp
+  assessment, and primary-tooth considerations. Follow-up is tied to risk and to the pathway.
+- Terms have accessible tooltips. The 3D lesion updates to match.
+- Complete excavation is never presented as the default for deep lesions.
 
 ### Cavity preparation simulator
 - Four procedures: conservative occlusal, Class I, Class II (mesio-occlusal with a proximal box),
@@ -138,6 +162,18 @@ not a competence assessment.
   why.
 - You can step forwards and backwards, replay, change instruments, inspect from any angle and use
   the **before/after comparison** (two teeth side by side).
+- *(2026-11-02, draft)*
+  - **Reasoning checkpoints** at key steps: outline extent, peripheral endpoint, floor depth,
+    Class II access and gingival margin, whether selective removal is appropriate, and where
+    excavation stops.
+  - Choosing "hard dentin everywhere" switches the 3D cavity to a **non-selective endpoint**.
+    **Compare selective vs non-selective** shows both endpoints side by side, and section labels
+    mark the hard peripheral dentin and the soft dentin left over the pulp.
+  - A **pulp-proximity gauge** shows the remaining dentin over the pulp, measured on the model,
+    with bands labelled illustrative.
+  - A **completion review** reports on instrument choice (first attempts count), access, tissue
+    preservation, endpoint, pulp risk and reasoning. An untouched procedure scores nothing, and
+    the review states it is not a competency assessment.
 
 ### Restorative materials laboratory
 - Distinct workflows for each material:
@@ -158,24 +194,37 @@ not a competence assessment.
   3D view shows each final restoration in a preparation that suits it.
 
 ### Assessment
-- 14 quiz questions covering anatomy, caries, classification, procedures and materials. Each
-  answer gets immediate feedback with an explanation and its source, a running score is shown, and
-  the results screen breaks the score down by topic. It states clearly that a quiz score is not
-  evidence of clinical competence.
+- 30 quiz questions covering anatomy, caries, ICDAS classification (including 4 image-based items
+  with schematic illustrations), lesion activity, treatment planning, deep caries, primary vs
+  permanent teeth, procedures and materials. The 16 items added on 2026-11-02 are drafts.
+- Each answer gets immediate feedback with an explanation and its source, and a running score is
+  shown. The results screen breaks the score down by topic and lists strengths (≥ 80%) and areas
+  for improvement (< 60%), each with a link to the module to revise.
+- It states clearly that a quiz score is not evidence of clinical competence.
 
 ### Caries Quest (game) — `draft_pending_review`
-A short game on caries detection and management, meant to motivate practice.
-- 8 fictional patients in random order. Each has findings (visual exam on a cleaned, dried tooth,
-  radiograph, symptoms, risk) and the 3D tooth.
-- **Detect:** choose the ICDAS code (+100). After the call, the 3D view opens in cross-section so
-  the lesion depth can be checked.
+A case-based game on caries detection, management and reasoning, meant to motivate practice.
+- 11 fictional patients in random order, permanent and primary teeth. The six core scenario types
+  are covered:
+  - active non-cavitated enamel lesion
+  - inactive enamel lesion
+  - cleansable cavity
+  - non-cleansable dentinal cavity
+  - deep caries with a vital pulp
+  - signs of irreversible pulpitis
+- Each case has findings (visual exam on a cleaned, dried tooth, radiograph, symptoms, risk) and
+  the 3D tooth.
+- **Detect:** choose the ICDAS code, 0–6 (+100). After the call, the 3D view opens in cross-section
+  and the schematic for the keyed code is shown.
 - **Manage:** choose the best option for the patient (+150; +75 for an option that can be
-  considered but is not the best fit). Answers are graded by the reviewed decision pathway in
-  `modules/diagnosis/decisionEngine.ts`, and its reasoning is shown as feedback.
+  considered but is not the best fit). Answers are graded by the decision pathway in
+  `modules/diagnosis/decisionEngine.ts`; its 2026-11-02 additions are drafts.
+- **Justify:** choose the reasoning that supports the best-fit option (+50). The pathway's own
+  reasoning is revealed only after this step.
 - Streak bonus for consecutive perfect cases (up to +100 each), a running scoreboard, a final rank,
   a case-by-case breakdown, and a personal best kept in the browser.
-- Only the case vignettes and the choice of options are new content; they await review
-  (`CLINICAL_REVIEW_CHECKLIST.md`, section H).
+- The case vignettes, the options offered and the justifications are new content; they await
+  review (`CLINICAL_REVIEW_CHECKLIST.md`, sections H and I).
 
 ---
 
@@ -193,6 +242,8 @@ src/
     anatomy.ts cariesStages.ts procedures.ts instruments.ts materials.ts
     quiz.ts cases.ts references.ts topics.ts
   modules/diagnosis/           Educational decision engine (pure functions)
+  modules/procedures/          Completion review of simulated preparations (decisions, not skill)
+  modules/game/                Caries Quest scoring
   state/
     store.ts                   Central typed Zustand store (topic, mode, structure, step,
                                procedure, instrument, material, protocol, view, quiz…)
@@ -311,10 +362,14 @@ cavity). That split is meant to support the following:
 ## 4. Test results (from the final run)
 
 Full, measured results of the studio upgrade are in **`TEST_RESULTS.md`**:
-- Unit and UI tests: **15 files, 95 tests**, all passing.
-- Browser acceptance: **26/26 checks** passing. That is the 15 original checks, 11 studio checks
-  for loading, camera, picking, layers, stages, comparison, knowledge check, keyboard, phone,
-  missing model and no-WebGL, and 1 Caries Quest check.
+- Unit and UI tests: **16 files, 118 tests**, all passing.
+- Browser acceptance: **30/30 checks** passing. That is:
+  - the 15 original checks
+  - 11 studio checks
+  - 1 Caries Quest check
+  - 3 checks for the caries pathway upgrade: decision pathway, selective removal with the gauge
+    and the review, and assessment
+  - 1 phone-layout check
 - Bundle sizes and model-processing timings.
 
 The rest of this section describes the original modules.
@@ -391,6 +446,16 @@ effects/`useFrame`, and seven are fast-refresh "only export components" hints.
   contacts and matrix adaptation are simplified.
 - **The decision pathway is rule-based and educational only.** It does not provide clinical
   recommendations.
+  - It covers coronal occlusal and proximal lesions; root caries uses separate criteria and is not
+    in the pathway.
+  - ICDAS 4 is treated as non-cavitated.
+- **Pulp proximity is a model value.** The gauge measures remaining dentin along the lesion axis of
+  the schematic tooth. Pulp horns under the cusps are closer than the gauge shows, and the colour
+  bands are illustrative, not clinical thresholds.
+- **The procedure review assesses decisions, not skill.** There is no tactile feedback, tissue
+  hardness or cutting physics, so it cannot judge hand skills and does not award competency.
+- **ICDAS figures are schematics.** They are not clinical photographs. Fine colour changes
+  (ICDAS 1–2) are hard to show, and the procedural 3D tooth shows them only faintly.
 - **Performance depends on the GPU.** On software-rendered WebGL (as in CI), each CSG step takes
   roughly 100–300 ms, so cutting animations step rather than glide.
 - The UI text is in English only.
@@ -498,6 +563,11 @@ lists every item to review and has a sign-off table.
 **Caries Quest — not reviewed.** The game's case vignettes, keyed ICDAS codes and the
 management options offered per case are `draft_pending_review` (checklist section H). The
 grading itself reuses the reviewed decision pathway.
+
+**Caries pathway upgrade (2026-11-02) — not reviewed.** The new pathway steps and options,
+activity and primary-dentition content, game cases and the justify step, procedure checkpoints and
+review, pulp-proximity bands, 16 quiz items and 4 new references are `draft_pending_review`
+(checklist section I). The ICDAS wording follows the reviewer's specification.
 
 **When content changes:** set the edited items' `verification` back to
 `'draft_pending_review'` (the app then shows the draft badge for them), get the change

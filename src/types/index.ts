@@ -69,7 +69,7 @@ export interface AnatomyEntry extends ContentMeta {
 /* ------------------------------------------------------------------ */
 
 export type LesionSite = 'occlusal' | 'proximal' | 'root';
-export type CavityShape = 'conservative' | 'classI' | 'classII' | 'selective';
+export type CavityShape = 'conservative' | 'classI' | 'classII' | 'selective' | 'nonSelective';
 export type MaterialId = 'composite' | 'gic' | 'rmgic' | 'amalgam' | 'calciumSilicate';
 export type IsolationType = 'none' | 'cottonRolls' | 'rubberDam';
 export type CutSurfaceFinish = 'fresh' | 'etched' | 'selectiveEtched' | 'primed' | 'bonded' | 'conditioned';
@@ -305,7 +305,14 @@ export type ComparisonKey =
 /* Diagnosis / treatment planning                                      */
 /* ------------------------------------------------------------------ */
 
+/** ICDAS II code for a coronal surface (0 = sound … 6 = extensive cavity with visible dentin). */
+export type IcdasScore = '0' | '1' | '2' | '3' | '4' | '5' | '6';
+
 export interface DiagnosisInput {
+  /** Visual severity (ICDAS), kept separate from activity. */
+  icdas: IcdasScore;
+  dentition: 'permanent' | 'primary';
+  surface: 'occlusal' | 'proximal';
   activity: 'active' | 'inactive' | 'uncertain';
   cavitation: 'non-cavitated' | 'microcavity' | 'cavitated';
   depth: 'enamel' | 'outer-dentin' | 'middle-dentin' | 'deep-dentin';
@@ -313,13 +320,19 @@ export interface DiagnosisInput {
   pulp: 'responsive-normal' | 'reversible-signs' | 'irreversible-signs' | 'non-responsive';
   risk: 'low' | 'moderate' | 'high';
   restorability: 'restorable' | 'questionable' | 'non-restorable';
+  /** Can the patient keep the cavity free of biofilm with a toothbrush? Relevant once a cavity exists. */
+  cleansability: 'cleansable' | 'non-cleansable';
 }
 
 export type PathwayFit = 'consider' | 'may-consider' | 'generally-not-indicated' | 'refer';
 
+/** Intervention level, from least to most invasive (consensus terminology, Innes et al. 2016). */
+export type ManagementCategory = 'preventive' | 'non-operative' | 'micro-invasive' | 'restorative' | 'pulp' | 'extraction';
+
 export interface TreatmentPathway {
   id: string;
   title: string;
+  category: ManagementCategory;
   fit: PathwayFit;
   reasoning: string[];
   refs: string[];
@@ -329,6 +342,8 @@ export interface DiagnosisResult {
   summary: string;
   pathways: TreatmentPathway[];
   alerts: string[];
+  /** What to review, and when, after the management decision. */
+  followUp: string[];
   visual: Partial<ToothVisualState>;
 }
 
@@ -336,9 +351,24 @@ export interface DiagnosisResult {
 /* Assessment                                                          */
 /* ------------------------------------------------------------------ */
 
+export type QuizTopic =
+  | 'anatomy'
+  | 'caries'
+  | 'classification'
+  | 'activity'
+  | 'treatment'
+  | 'deep-caries'
+  | 'primary'
+  | 'materials'
+  | 'procedures';
+
 export interface QuizQuestion {
   id: string;
-  topic: 'anatomy' | 'caries' | 'classification' | 'materials' | 'procedures';
+  topic: QuizTopic;
+  /** Schematic ICDAS illustration shown with the question (image-based items). */
+  figure?: IcdasScore;
+  /** Items added after the content review stay drafts until approved. */
+  verification?: VerificationStatus;
   prompt: string;
   options: string[];
   correctIndex: number;

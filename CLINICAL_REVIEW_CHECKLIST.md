@@ -1,4 +1,4 @@
-# Clinical review checklist — Caries Learning Studio and Caries Quest
+# Clinical review checklist — caries modules (studio, game, pathway upgrade)
 
 **Status: `draft_pending_review`.** No qualified person has reviewed anything listed here.
 The earlier sign-off of 2026-10-21 (README §9) covers the procedural modules and does **not**
@@ -112,6 +112,74 @@ shown. Detection uses the reviewed ICDAS codes (1 and 2 grouped). New content to
 - [ ] H4. The scoring, streaks and ranks ("Cariology Ace", "Confident Clinician", "Caries Detective", "Dental Explorer") and the formative-only disclaimer are appropriate.
 - [ ] H5. Showing the tooth without plaque ("cleaned and dried") and opening the cross-section after the detection call is appropriate.
 
+## I. Caries learning pathway upgrade (added 2026-11-02)
+
+New or changed content in the caries modules. The ICDAS wording was specified by the course
+reviewer; everything else below was written for this upgrade and needs review.
+
+**I-a. ICDAS terminology** (`src/data/cariesStages.ts`, `ICDAS_CODES`)
+- [ ] Codes 0–6 use the specified wording. ICDAS 1 adds "(or confined to the pit or fissure)"; ICDAS 0 adds "no evidence of caries after prolonged air drying".
+- [ ] Schematic illustrations of codes 0–6 (occlusal view plus section, `IcdasFigure.tsx`) are acceptable as teaching schematics.
+- [ ] ICDAS 4 is treated as non-cavitated (no dentin exposed) in the pathway; ICDAS 3 as a micro-cavity; ICDAS 5–6 as cavitated.
+
+**I-b. Decision pathway** (`src/modules/diagnosis/decisionEngine.ts`). Previously reviewed pathway text is unchanged except where noted.
+- [ ] New steps: dentition, surface (occlusal or proximal), ICDAS code, cleansability, and follow-up.
+- [ ] Each option is given an intervention category: preventive, non-operative, micro-invasive, restorative, pulp-related, or extraction/referral.
+- [ ] New options:
+    - Risk-based prevention and recall (always offered).
+    - Preventive sealant on a sound surface (ICDAS 0, high risk, occlusal; "may consider").
+    - Resin infiltration or sealing for non-cavitated proximal lesions (enamel or outer third of dentin).
+    - Silver diamine fluoride for cavitated lesions ("consider" in primary teeth, "may consider" in permanent teeth).
+    - Hall technique for cavitated dentin lesions in primary molars without pulp signs.
+- [ ] Cleansable cavities:
+    - Non-restorative cavity control becomes "consider" when the cavity is cleansable and the lesion is inactive (or the tooth is primary).
+    - Restoration becomes "may consider" for an arrested, cleansable cavity.
+    - The non-operative reasoning changes accordingly.
+- [ ] Primary-tooth notes are added to the extraction and pulp-related options. There is an alert about thinner tissues and larger pulps.
+- [ ] Consistency alerts:
+    - ICDAS ≤ 2 with a lesion in the middle or inner dentin on the radiograph.
+    - ICDAS 5–6 with an enamel-only radiograph.
+- [ ] The deep-lesion alert says to assess the pulp first. Follow-up items are tied to risk and to the chosen pathway.
+
+**I-c. Activity assessment and primary teeth** (`src/data/cariesPathway.ts`)
+- [ ] Activity principles, including "Colour alone does not establish activity", and the active vs inactive feature table (appearance, texture, plaque stagnation, adjacent gingiva).
+- [ ] Primary vs permanent table: tissues, pulp, contacts, lifespan and management options.
+- [ ] Glossary definitions used in the tooltips (13 terms).
+
+**I-d. Caries Quest changes** (`src/data/game/cariesQuest.ts`)
+- [ ] Detection now uses individual codes 0–6. The previously keyed "1–2" cases are now keyed as ICDAS 2, because their findings say "visible wet and dry".
+- [ ] New cases:
+    - Wide, open cavity with hard dentin (cavitated, cleansable, arrested → non-restorative cavity control).
+    - A five-year-old with a primary molar cavity (→ Hall technique).
+    - A proximal enamel lesion in a high-risk 15-year-old (→ resin infiltration or sealing).
+- [ ] A new "Justify" step with four reasons per case: check each keyed reason and explanation.
+
+**I-e. Procedural checkpoints and completion review** (`src/data/procedureCheckpoints.ts`, `src/modules/procedures/review.ts`)
+- [ ] Checkpoint questions, answers and feedback for each procedure: outline extent, peripheral endpoint, floor depth, Class II access and gingival margin, appropriateness of selective removal, and where excavation stops.
+- [ ] Choosing "hard dentin everywhere" switches the simulation to a non-selective endpoint, about 0.3 mm from the pulp in this model; selective removal leaves about 1.3 mm.
+- [ ] Pulp-proximity bands (model values, labelled illustrative): ≥ 1.5 mm "comfortable"; 0.5–1.5 mm "close: protect it"; < 0.5 mm "high exposure risk". Are they acceptable as teaching bands?
+- [ ] Review criteria:
+    - instrument choice (first attempts count)
+    - access
+    - tissue preservation
+    - procedural endpoint
+    - pulp risk
+    - clinical reasoning
+- [ ] The "not a competency assessment" disclaimer is adequate.
+
+**I-f. New assessment items** (`src/data/quiz.ts`, the 16 items marked `draft_pending_review`)
+- [ ] 4 image-based ICDAS items (codes 1, 3, 4, 6).
+- [ ] 3 activity items.
+- [ ] 3 treatment-planning items.
+- [ ] 3 deep-caries items.
+- [ ] 3 primary-dentition items.
+
+**I-g. New references to verify** (`src/data/references.ts`)
+- [ ] pitts2014 — ICCMS Guide for Practitioners and Educators (2014).
+- [ ] innes2007 — Hall Technique RCT, BMC Oral Health 2007;7:18.
+- [ ] crystal2017 — AAPD SDF guideline, Pediatric Dentistry 2017;39(5):135–145.
+- [ ] dorri2015 — Cochrane review of micro-invasive proximal interventions, CD010431.
+
 ---
 
 ## Sign-off
@@ -126,3 +194,4 @@ shown. Detection uses the reviewed ICDAS codes (1 and 2 grouped). New content to
 | F | | | | |
 | G | | | | |
 | H | | | | |
+| I | | | | |

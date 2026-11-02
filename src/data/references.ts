@@ -155,6 +155,35 @@ export const REFERENCES: Reference[] = [
     type: 'journal',
     supports: ['materials'],
   },
+  // Added 2026-11-02 with the caries pathway upgrade; pending review like the content citing them.
+  {
+    id: 'pitts2014',
+    citation:
+      'Pitts NB, Ismail AI, Martignon S, Ekstrand K, Douglas GVA, Longbottom C. ICCMS™ Guide for Practitioners and Educators. International Caries Classification and Management System; 2014.',
+    type: 'guideline',
+    supports: ['classification', 'diagnosis'],
+  },
+  {
+    id: 'innes2007',
+    citation:
+      'Innes NPT, Evans DJP, Stirrups DR. The Hall Technique; a randomized controlled clinical trial of a novel method of managing carious primary molars in general dental practice: acceptability of the technique and outcomes at 23 months. BMC Oral Health. 2007;7:18.',
+    type: 'journal',
+    supports: ['diagnosis'],
+  },
+  {
+    id: 'crystal2017',
+    citation:
+      'Crystal YO, Marghalani AA, Ureles SD, et al. Use of silver diamine fluoride for dental caries management in children and adolescents, including those with special health care needs. Pediatric Dentistry. 2017;39(5):135–145.',
+    type: 'guideline',
+    supports: ['diagnosis'],
+  },
+  {
+    id: 'dorri2015',
+    citation:
+      'Dorri M, Dunne SM, Walsh T, Schwendicke F. Micro-invasive interventions for managing proximal dental decay in primary and permanent teeth. Cochrane Database of Systematic Reviews. 2015;(11):CD010431.',
+    type: 'journal',
+    supports: ['diagnosis'],
+  },
   {
     id: 'minamata2013',
     citation:

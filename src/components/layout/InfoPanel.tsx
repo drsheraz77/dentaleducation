@@ -5,10 +5,10 @@ import { DiagnosisPanel } from '../education/DiagnosisPanel';
 import { CasePanel } from '../assessment/CasePanel';
 import { ClinicalAnnotationPanel } from '../studio/ClinicalAnnotationPanel';
 import { CariesQuestPanel } from '../game/CariesQuestPanel';
-import { QUIZ } from '../../data/quiz';
+import { QUIZ, QUIZ_TOPIC_LABEL } from '../../data/quiz';
 
 function QuizInfo() {
-  const topics = [...new Set(QUIZ.map((q) => q.topic))];
+  const topics = [...new Set(QUIZ.map((q) => q.topic))].map((t) => QUIZ_TOPIC_LABEL[t].toLowerCase());
   return (
     <div>
       <div className="eyebrow">Knowledge assessment</div>

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { LesionSite, LesionVisual } from '../../types';
 import { revolve, type ProfilePoint } from './revolve';
-import { TOOTH } from './anatomy';
+import { SITE_FRAME_DATA, type SiteFrameData } from './landmarks';
 
 /**
  * Lesion geometry is built in a local frame where the lesion grows along −Y from the
@@ -20,30 +20,12 @@ export interface SiteFrame {
   aspect: [number, number];
 }
 
-export const SITE_FRAMES: Record<LesionSite, SiteFrame> = {
-  occlusal: {
-    origin: new THREE.Vector3(0, TOOTH.fossaSurfaceY, 0),
-    axis: new THREE.Vector3(0, -1, 0),
-    enamelThickness: TOOTH.fossaSurfaceY - TOOTH.dejCenterY,
-    dentinToPulp: TOOTH.dejCenterY - TOOTH.pulpRoofY,
-    aspect: [1.35, 0.8],
-  },
-  proximal: {
-    // Mesial contact area, just cervical to the marginal ridge.
-    origin: new THREE.Vector3(5.2, 3.0, 0),
-    axis: new THREE.Vector3(-1, -0.25, 0),
-    enamelThickness: 0.75,
-    dentinToPulp: 2.4,
-    aspect: [1.1, 1.0],
-  },
-  root: {
-    origin: new THREE.Vector3(4.32, -1.0, 0),
-    axis: new THREE.Vector3(-1, 0, 0),
-    enamelThickness: 0.16,
-    dentinToPulp: 1.45,
-    aspect: [1.3, 1.0],
-  },
-};
+export const SITE_FRAMES: Record<LesionSite, SiteFrame> = Object.fromEntries(
+  (Object.entries(SITE_FRAME_DATA) as [LesionSite, SiteFrameData][]).map(([site, f]) => [
+    site,
+    { ...f, origin: new THREE.Vector3(...f.origin), axis: new THREE.Vector3(...f.axis) },
+  ]),
+) as Record<LesionSite, SiteFrame>;
 
 export function siteMatrix(site: LesionSite): THREE.Matrix4 {
   return frameMatrix(SITE_FRAMES[site]);

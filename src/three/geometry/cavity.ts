@@ -4,6 +4,9 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { CavityShape, CavityVisual, LesionVisual } from '../../types';
 import { SITE_FRAMES, buildCavitationBrush, buildLesionGeometries, siteMatrix } from './lesion';
+import { CAVITATION_STEPS, CAVITY_STEPS, SHAPE_SITE, TOP, excavationSize, outlineBoxes, phases, q } from './prepPlan';
+
+export { CAVITATION_STEPS, CAVITY_STEPS, SHAPE_SITE, q, remainingDentinOverPulp } from './prepPlan';
 
 /**
  * Tissue removal is simulated with constructive solid geometry (three-bvh-csg):
@@ -48,7 +51,7 @@ function relabelGroups(result: Brush): THREE.BufferGeometry {
 /* Preparation outlines                                                */
 /* ------------------------------------------------------------------ */
 
-const TOP = 9;
+const lerp = THREE.MathUtils.lerp;
 
 function box(x0: number, x1: number, z0: number, z1: number, floor: number, radius = 0.35): THREE.BufferGeometry {
   const h = TOP - floor;
@@ -57,41 +60,8 @@ function box(x0: number, x1: number, z0: number, z1: number, floor: number, radi
   return stripToPositionNormal(g);
 }
 
-const lerp = THREE.MathUtils.lerp;
-
-/** Outline phase (0–0.7 of depth) then excavation phase (0.7–1). */
-function phases(depth: number) {
-  return {
-    outline: THREE.MathUtils.clamp(depth / 0.7, 0, 1),
-    excavation: THREE.MathUtils.clamp((depth - 0.7) / 0.3, 0, 1),
-  };
-}
-
-export const SHAPE_SITE: Record<CavityShape, 'occlusal' | 'proximal'> = {
-  conservative: 'occlusal',
-  classI: 'occlusal',
-  classII: 'proximal',
-  selective: 'occlusal',
-};
-
 function outlineGeometries(shape: CavityShape, outline: number): THREE.BufferGeometry[] {
-  if (outline <= 0.01) return [];
-  switch (shape) {
-    case 'conservative':
-      return [box(-1.5, 1.5, -0.55, 0.55, lerp(5.6, 4.15, outline), 0.3)];
-    case 'classI':
-      return [
-        box(-3.3, 3.3, -1.0, 1.0, lerp(5.6, 3.75, outline)),
-        box(-0.55, 0.55, -2.3, 2.3, lerp(5.8, 3.85, outline), 0.3),
-      ];
-    case 'classII':
-      return [
-        box(-2.6, 3.6, -1.0, 1.0, lerp(5.6, 3.75, outline)),
-        box(3.0, 7.0, -1.85, 1.85, lerp(5.2, 1.0, outline)),
-      ];
-    case 'selective':
-      return [box(-2.8, 2.8, -1.7, 1.7, lerp(5.6, 3.7, outline), 0.5)];
-  }
+  return outlineBoxes(shape, outline).map((b) => box(b.x0, b.x1, b.z0, b.z1, b.floor, b.radius));
 }
 
 /** Ellipsoid that removes carious dentin; selective removal leaves the deepest soft dentin. */
@@ -99,13 +69,9 @@ function excavationGeometry(shape: CavityShape, lesion: LesionVisual | null, e: 
   if (e <= 0.01 || !lesion || lesion.dentinDepth <= 0.02) return null;
   const site = SHAPE_SITE[shape];
   const f = SITE_FRAMES[site];
-  const spread = 0.7 + 1.9 * lesion.dentinDepth;
-  const lesionDepth = lesion.dentinDepth * f.dentinToPulp + 0.08;
-  const selective = shape === 'selective';
-  const depth = selective ? Math.max(0.3, lesionDepth - 0.75) : lesionDepth + 0.2;
-  const lateral = selective ? spread + 0.35 : spread + 0.2;
+  const { lateral, vertical } = excavationSize(shape, lesion, e);
   const g = new THREE.SphereGeometry(1, 40, 24);
-  g.scale(lateral * f.aspect[0] * Math.max(0.35, e), depth * e + 0.05, lateral * f.aspect[1] * Math.max(0.35, e));
+  g.scale(lateral * f.aspect[0] * Math.max(0.35, e), vertical, lateral * f.aspect[1] * Math.max(0.35, e));
   g.translate(0, -f.enamelThickness + 0.1, 0);
   g.applyMatrix4(siteMatrix(site));
   g.deleteAttribute('uv');
@@ -162,10 +128,6 @@ class GeometryCache {
 
 export const csgCache = new GeometryCache();
 
-export const q = (v: number, steps = 20) => Math.round(v * steps) / steps;
-/** Quantisation used for animated CSG parameters. */
-export const CAVITY_STEPS = 10;
-export const CAVITATION_STEPS = 10;
 
 export function lesionKey(lesion: LesionVisual | null): string {
   if (!lesion) return 'none';

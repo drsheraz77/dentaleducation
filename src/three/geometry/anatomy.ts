@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { gaussian, revolve, smoothstep, type ProfilePoint } from './revolve';
+import { TOOTH } from './landmarks';
+
+export { TOOTH };
 
 /**
  * Simplified, scientifically *representative* mandibular first molar.
@@ -11,19 +14,6 @@ import { gaussian, revolve, smoothstep, type ProfilePoint } from './revolve';
  * This is NOT a validated anatomical model (see README "Known limitations").
  */
 
-export const TOOTH = {
-  aspect: [1.06, 0.94] as [number, number],
-  squareness: 2.6,
-  segments: 72,
-  /** Approximate landmark heights at the central fossa, used to place lesions/cavities. */
-  fossaSurfaceY: 5.2,
-  dejCenterY: 4.06,
-  pulpRoofY: 1.3,
-  boneCrestY: -2.0,
-  mesialRootX: 2.4,
-  distalRootX: -2.4,
-  rootTilt: 0.08,
-} as const;
 
 const CUSPS: [number, number][] = [
   [2.4, 2.0],

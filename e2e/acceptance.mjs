@@ -566,7 +566,7 @@ await check('S11. Without WebGL the studio explains itself and the lesson still 
   return `fallback message shown, lesson advanced to "${heading}", no page errors`;
 });
 
-await check('G1. Caries Quest: play a round, score updates, results and replay', async () => {
+await check('G1. Caries Quest: detect, manage, justify; score, results and replay', async () => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('button', { name: /caries quest/i }).click();
   await settle(2500);
@@ -582,12 +582,14 @@ await check('G1. Caries Quest: play a round, score updates, results and replay',
   const sec = await shot('G1-case-section');
   assert(differs(ext, sec) > 0.05, 'cross-section did not change the view');
   await info.getByRole('group', { name: 'Management' }).getByRole('button').nth(0).click();
+  await info.getByRole('group', { name: 'Justification' }).getByRole('button').nth(0).click();
   const fb = await info.getByRole('status').allInnerTexts();
-  assert(fb.length === 2, `expected detection and management feedback, saw ${fb.length}`);
+  assert(fb.length === 3, `expected detection, management and justification feedback, saw ${fb.length}`);
   for (let i = 0; i < order.length; i++) {
     if (i > 0) {
-      await info.getByRole('group', { name: 'ICDAS code' }).getByRole('button').nth(i % 5).click();
+      await info.getByRole('group', { name: 'ICDAS code' }).getByRole('button').nth(i % 7).click();
       await info.getByRole('group', { name: 'Management' }).getByRole('button').nth(i % 4).click();
+      await info.getByRole('group', { name: 'Justification' }).getByRole('button').nth(i % 4).click();
     }
     await info.getByRole('button', { name: /next case|see results/i }).click();
   }
@@ -599,6 +601,129 @@ await check('G1. Caries Quest: play a round, score updates, results and replay',
   const fresh = await store('st.game.index');
   assert(fresh === 0, 'play again did not restart');
   return `scoreboard ${before.trim()} → ${board.trim()}; results "${final.replace(/\s+/g, ' ')}"; detection opens the section; replay restarts`;
+});
+
+await check('P1. Caries decision pathway: ICDAS drives cavitation; categories, alerts and follow-up update', async () => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('button', { name: /diagnosis/i }).first().click();
+  await settle(1500);
+  const info = page.locator('.info');
+  const steps = await info.locator('.pathway-step h3').allInnerTexts();
+  assert(steps.length === 8, `expected 8 pathway steps, saw ${steps.length}`);
+  await info.getByRole('combobox', { name: /icdas code/i }).selectOption('6');
+  await info.getByRole('combobox', { name: /estimated lesion depth/i }).selectOption('deep-dentin');
+  await settle(1500);
+  const cav = await page.getByTestId('derived-cavitation').innerText();
+  assert(/cavitated into dentin/i.test(cav), `cavitation shown as "${cav}"`);
+  assert(await page.getByTestId('pathway-selective').isVisible(), 'selective removal not offered for deep caries');
+  const nonSel = await page.getByTestId('pathway-non-selective').innerText();
+  assert(/generally not indicated/i.test(nonSel), 'non-selective removal not marked as generally not indicated');
+  const groups = await info.locator('.pathway-group__title').allInnerTexts();
+  await info.getByRole('combobox', { name: /^dentition$/i }).selectOption('primary');
+  await info.getByRole('combobox', { name: /estimated lesion depth/i }).selectOption('middle-dentin');
+  await settle(800);
+  assert(await page.getByTestId('pathway-hall').isVisible(), 'Hall technique not offered for a primary molar');
+  const follow = await page.getByTestId('follow-up').innerText();
+  assert(/exfoliation/i.test(follow), 'follow-up does not mention exfoliation for a primary tooth');
+  // Tooltip: reaching the info button with the Tab key shows the definition.
+  await info.getByRole('combobox', { name: /^surface$/i }).focus();
+  await page.keyboard.press('Tab');
+  assert(await info.getByRole('button', { name: /about: icdas/i }).evaluate((el) => el === document.activeElement), 'Tab did not reach the ICDAS info button');
+  assert(await info.getByRole('tooltip').filter({ hasText: 'International Caries Detection' }).isVisible(), 'ICDAS tooltip not shown on focus');
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/P1-pathway.png` });
+  await page.keyboard.press('Escape');
+  return `8 steps; ICDAS 6 → cavitated; groups: ${groups.join(' | ')}; primary → Hall technique; tooltip on focus`;
+});
+
+await check('P2. Selective removal: checkpoint, pulp-proximity gauge, endpoint comparison and completion review', async () => {
+  await page.getByRole('button', { name: /cavity preparation/i }).click();
+  await page.getByRole('combobox', { name: /procedure/i }).selectOption('selective-removal');
+  await page.evaluate(() => {
+    const st = window.__dentalverse.store.getState();
+    st.restartProcedure();
+    st.setStep(4);
+    st.setViewMode('section');
+  });
+  await settle(5000);
+  const info = page.locator('.info');
+  const gaugeSel = await page.getByTestId('pulp-proximity').innerText();
+  const selPx = await shot('P2-selective');
+  const cp = info.getByRole('region', { name: /reasoning checkpoint/i });
+  await cp.getByRole('button', { name: /hard dentin everywhere/i }).click();
+  await settle(6000);
+  const gaugeNon = await page.getByTestId('pulp-proximity').innerText();
+  const nonPx = await shot('P2-non-selective');
+  assert(/close to the pulp/i.test(gaugeSel) && /very close/i.test(gaugeNon), `gauge "${gaugeSel}" → "${gaugeNon}"`);
+  assert(differs(selPx, nonPx) > 0.005, 'non-selective endpoint did not change the 3D preparation');
+  const labels = (await page.locator('.label-layer').innerText()).replace(/\s+/g, ' ');
+  assert(/floor ≈ 0\.\d mm from the pulp/i.test(labels), `endpoint label missing: ${labels}`);
+  await page.getByRole('button', { name: /compare selective vs non-selective/i }).click();
+  await settle(8000);
+  const captions = await page.locator('.scene-caption').allInnerTexts();
+  await shot('P2-compare');
+  assert(captions.join('|') === 'Selective removal|Non-selective removal', `captions ${captions.join('|')}`);
+  await page.getByRole('button', { name: /compare selective vs non-selective/i }).click();
+  await page.evaluate(() => window.__dentalverse.store.getState().setStep(7));
+  await settle(1500);
+  const review = await page.getByTestId('procedure-review').innerText();
+  assert(/completion summary/i.test(review) && /pulp risk\s*needs improvement/i.test(review), 'review does not flag the pulp risk');
+  assert(/not a competency assessment/i.test(review), 'review lacks the competency disclaimer');
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/P2-review.png` });
+  await page.getByRole('button', { name: /restart this procedure/i }).click();
+  assert((await store('Object.keys(st.checkpointAnswers).length')) === 0, 'restart did not clear the answers');
+  const reading = (t) => (t.match(/≈ [^\n]+/) ?? [''])[0];
+  return `gauge "${reading(gaugeSel)}" → "${reading(gaugeNon)}"; comparison captions OK; review flags pulp risk; restart clears`;
+});
+
+await check('P3. Assessment: image-based ICDAS item and strengths/areas summary', async () => {
+  await page.getByRole('button', { name: /knowledge assessment/i }).click();
+  await settle(800);
+  const idx = await page.evaluate(() => {
+    const st = window.__dentalverse.store.getState();
+    return st.quiz.answers.length;
+  });
+  // Jump to the first image item (index found from the rendered question list).
+  await page.evaluate(() => {
+    const s = window.__dentalverse.store;
+    s.setState({ quiz: { index: 14, answers: s.getState().quiz.answers.map(() => null), finished: false } });
+  });
+  await settle(500);
+  const img = page.getByRole('img', { name: /identify the icdas code/i });
+  assert(await img.isVisible(), 'schematic image not shown');
+  if (SHOTS) await page.locator('.quiz').screenshot({ path: `${SHOTS}/P3-quiz-image.png` });
+  await page.getByRole('group', { name: 'Answer options' }).getByRole('button', { name: 'ICDAS 1' }).click();
+  const fb = await page.locator('.quiz [role="status"]').innerText();
+  assert(/^Correct\./.test(fb.trim()), `feedback "${fb}"`);
+  await page.evaluate(() => {
+    const s = window.__dentalverse.store;
+    s.setState({ quiz: { index: 0, answers: s.getState().quiz.answers.map((_, i) => (i % 2 ? 0 : 1)), finished: true } });
+  });
+  await settle(500);
+  const summary = await page.getByTestId('quiz-summary').innerText();
+  assert(/strengths/i.test(summary) && /areas for improvement/i.test(summary), 'summary missing');
+  const revise = page.getByRole('button', { name: /revise this topic/i });
+  const n = await revise.count();
+  if (n > 0) {
+    await revise.first().click();
+    const topic = await store('st.topic');
+    assert(topic !== 'quiz', 'revise link did not open a module');
+  }
+  return `${idx} questions; image item answered with feedback; summary with ${n} revise link(s)`;
+});
+
+await check('P4. New screens fit a phone without horizontal scrolling', async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const bad = [];
+  for (const t of ['diagnosis', 'classification', 'preparation', 'game', 'quiz']) {
+    await page.evaluate((t) => window.__dentalverse.store.getState().setTopic(t), t);
+    await settle(1200);
+    const o = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    if (o > 1) bad.push(`${t}: ${o}px`);
+  }
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/P4-phone-quiz.png` });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  assert(bad.length === 0, bad.join(', '));
+  return 'diagnosis, classification, preparation, game and quiz: no horizontal scroll at 390 px';
 });
 
 await check('15. No unresolved critical runtime errors in the console', async () => {

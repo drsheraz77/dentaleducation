@@ -5,6 +5,68 @@ Chromium 141.0.7390.37 with **SwiftShader (software) WebGL**, so there was no GP
 was produced by the commands shown; none are estimates. Timings on a machine with a GPU will
 differ.
 
+## Update 2026-11-02 — caries learning pathway upgrade
+
+Measured in the same container and browser after the upgrade:
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | passes |
+| `npm test` | **16 files, 118 tests, all passing** |
+| `npm run lint` | 0 errors, 29 warnings (unchanged; none from the new files) |
+| `npm run e2e` | **30/30 checks passed** (new: P1–P4; G1 now includes the justify step) |
+| Main bundle `index-*.js` | 467.12 kB (gzip 139.66 kB), up from 405.28 kB (121.75 kB) |
+| 3D chunk `ToothScene-*.js` | 1,049.10 kB (gzip 286.30 kB) — still lazy-loaded |
+
+During development, the first build pulled three.js into the initial load. The pulp gauge
+imported the CSG module, which produced a 628 kB eager chunk. The measurement was moved to a
+three.js-free module (`three/geometry/prepPlan.ts`, `landmarks.ts`) and the split was restored.
+
+New tests:
+- **`pathwayUpgrade.test.tsx` (12 tests).** These cover:
+  - ICDAS wording 0–6 and the activity principles
+  - remaining dentin: selective about 1.3 mm vs non-selective about 0.3 mm in the model;
+    shallow procedures above 1.5 mm
+  - the checkpoint switching the 3D endpoint, and the endpoint comparison
+  - one sound option per checkpoint
+  - an untouched procedure being "not assessed"
+  - first-attempt instrument errors, and pulp-risk flagging
+  - checkpoint, gauge and review in the UI, including restart
+  - quiz coverage, and image items not revealing the answer
+  - the strengths and areas summary
+- **`decisionEngine.test.ts` (+8 tests).** These cover:
+  - ICDAS 0 gets prevention only
+  - every option has a category
+  - cleansable cavities lead to non-restorative cavity control
+  - proximal lesions lead to infiltration, not sealant
+  - primary molars get the Hall technique and SDF
+  - deep caries keeps selective removal, with non-selective not indicated
+  - visual/radiographic disagreement alerts
+  - follow-up content
+- **`cariesQuest.test.tsx`** was updated for individual ICDAS codes, required scenario coverage,
+  justifications, and "never key complete excavation".
+
+Browser checks added:
+- **P1. Decision pathway**
+  - 8 steps are shown.
+  - ICDAS 6 is shown as "Cavitated into dentin".
+  - Selective removal is offered and non-selective is "generally not indicated".
+  - A primary tooth is offered the Hall technique, and follow-up mentions exfoliation.
+  - Tabbing to the ICDAS info button shows its definition.
+- **P2. Selective removal**
+  - The gauge reads "≈ 1.3 mm · Close to the pulp" and changes to "≈ 0.3 mm · Very close" after
+    the non-selective answer.
+  - The 3D preparation changes, and the section label reads "Floor ≈ 0.3 mm from the pulp".
+  - The side-by-side comparison has the correct captions.
+  - The completion summary flags pulp risk and carries the competency disclaimer; restart clears
+    the answers.
+- **P3. Assessment**
+  - The image item shows its schematic and is answered with feedback.
+  - The results show strengths, areas for improvement and working "revise" links.
+- **P4. Phone layout**
+  - The diagnosis, classification, preparation, game and quiz pages fit 390 px with no horizontal
+    scroll. This found and fixed a real bug: hidden tooltips were widening the page.
+
 ## Update 2026-10-25 — Caries Quest game
 
 Same container and browser. Measured after adding the game:

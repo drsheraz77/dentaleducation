@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type {
   AdhesiveProtocolId,
   DiagnosisInput,
+  IcdasScore,
   InstrumentId,
   LearningMode,
   MaterialId,
@@ -10,7 +11,7 @@ import type {
   TopicId,
   ViewMode,
 } from '../types';
-import { DEFAULT_DIAGNOSIS } from '../modules/diagnosis/decisionEngine';
+import { DEFAULT_DIAGNOSIS, ICDAS_CAVITATION } from '../modules/diagnosis/decisionEngine';
 import { MATERIAL_BY_ID } from '../data/materials';
 import { ANATOMY_TOUR } from '../data/anatomy';
 import { CASES } from '../data/cases';
@@ -18,7 +19,7 @@ import { QUIZ } from '../data/quiz';
 import { getTimeline } from './selectors';
 import { COMPARABLE_STAGES, DEFAULT_COMPARE, LESSON_STAGES, type ComparableStage } from '../data/studio/cariesLesson';
 import { LOWER_MOLAR_47, type LayerId } from '../data/studio/assets';
-import { QUEST_CASES, type IcdasBand, type PathwayId } from '../data/game/cariesQuest';
+import { QUEST_CASES, type PathwayId } from '../data/game/cariesQuest';
 import { shuffled, type QuestAnswer } from '../modules/game/cariesQuest';
 
 export type MaterialsTab = 'workflow' | 'compare';
@@ -55,6 +56,12 @@ export interface SimState {
   /** Instrument chosen per procedure step: key `${procedureId}:${stepId}`. */
   instrumentChoices: Record<string, InstrumentId>;
   compareBeforeAfter: boolean;
+  /** Selective removal: show the selective and non-selective endpoints side by side. */
+  compareEndpoints: boolean;
+  /** Reasoning checkpoint answers, keyed `${procedureId}:${stepId}` (first answer locks). */
+  checkpointAnswers: Record<string, number>;
+  /** Every instrument chosen at a step, in order, so first attempts count in the review. */
+  instrumentLog: Record<string, InstrumentId[]>;
 
   materialId: MaterialId;
   materialPreparation: ProcedureId;
@@ -103,6 +110,9 @@ export interface SimActions {
 
   setProcedure: (id: ProcedureId) => void;
   chooseInstrument: (stepKey: string, id: InstrumentId) => void;
+  answerCheckpoint: (key: string, option: number) => void;
+  restartProcedure: () => void;
+  setCompareEndpoints: (on: boolean) => void;
   setCompareBeforeAfter: (v: boolean) => void;
 
   setMaterial: (id: MaterialId) => void;
@@ -127,8 +137,9 @@ export interface SimActions {
   answerStudio: (questionId: string, option: number) => void;
   resetStudioAnswers: () => void;
   startGame: (random?: () => number) => void;
-  answerGameDetect: (caseId: string, band: IcdasBand) => void;
+  answerGameDetect: (caseId: string, code: IcdasScore) => void;
   answerGameManage: (caseId: string, pathway: PathwayId) => void;
+  answerGameJustify: (caseId: string, option: number) => void;
   nextGameCase: () => void;
 }
 
@@ -153,6 +164,9 @@ export const initialState: SimState = {
   procedureId: 'class-i',
   instrumentChoices: {},
   compareBeforeAfter: false,
+  compareEndpoints: false,
+  checkpointAnswers: {},
+  instrumentLog: {},
   materialId: 'composite',
   materialPreparation: 'class-i',
   adhesiveProtocol: 'etch-and-rinse',
@@ -194,6 +208,7 @@ export const useSim = create<Store>()((set, get) => ({
       playing: false,
       selectedStructure: null,
       compareBeforeAfter: false,
+      compareEndpoints: false,
       mode: topic === 'cases' ? 'case' : s.mode === 'case' ? 'explore' : s.mode,
       viewMode:
         topic === 'studio'
@@ -241,9 +256,32 @@ export const useSim = create<Store>()((set, get) => ({
   setSpeed: (speed) => set({ speed }),
   resetCamera: () => set((s) => ({ cameraResetToken: s.cameraResetToken + 1 })),
 
-  setProcedure: (procedureId) => set({ procedureId, step: 0, playing: false, compareBeforeAfter: false }),
-  chooseInstrument: (key, id) => set((s) => ({ instrumentChoices: { ...s.instrumentChoices, [key]: id } })),
-  setCompareBeforeAfter: (compareBeforeAfter) => set({ compareBeforeAfter }),
+  setProcedure: (procedureId) => set({ procedureId, step: 0, playing: false, compareBeforeAfter: false, compareEndpoints: false }),
+  chooseInstrument: (key, id) =>
+    set((s) => ({
+      instrumentChoices: { ...s.instrumentChoices, [key]: id },
+      instrumentLog: { ...s.instrumentLog, [key]: [...(s.instrumentLog[key] ?? []), id] },
+    })),
+  answerCheckpoint: (key, option) =>
+    set((s) => (key in s.checkpointAnswers ? {} : { checkpointAnswers: { ...s.checkpointAnswers, [key]: option } })),
+  // Clears this procedure's choices so it can be attempted again from the start.
+  restartProcedure: () =>
+    set((s) => {
+      const mine = (k: string) => k.startsWith(`${s.procedureId}:`);
+      const keep = <T,>(r: Record<string, T>) => Object.fromEntries(Object.entries(r).filter(([k]) => !mine(k)));
+      return {
+        step: 0,
+        playing: false,
+        compareBeforeAfter: false,
+        compareEndpoints: false,
+        instrumentChoices: keep(s.instrumentChoices),
+        instrumentLog: keep(s.instrumentLog),
+        checkpointAnswers: keep(s.checkpointAnswers),
+        cameraResetToken: s.cameraResetToken + 1,
+      };
+    }),
+  setCompareEndpoints: (compareEndpoints) => set({ compareEndpoints, compareBeforeAfter: false }),
+  setCompareBeforeAfter: (compareBeforeAfter) => set({ compareBeforeAfter, compareEndpoints: false }),
 
   setMaterial: (materialId) =>
     set((s) => {
@@ -261,7 +299,13 @@ export const useSim = create<Store>()((set, get) => ({
   setMaterialsTab: (materialsTab) => set({ materialsTab, playing: false }),
   setCompare: (slot, id) => set(slot === 'A' ? { compareA: id } : { compareB: id }),
 
-  setDiagnosis: (key, value) => set((s) => ({ diagnosis: { ...s.diagnosis, [key]: value } })),
+  // The ICDAS code determines cavitation status, so the two can never disagree.
+  setDiagnosis: (key, value) =>
+    set((s) => {
+      const next = { ...s.diagnosis, [key]: value };
+      if (key === 'icdas') next.cavitation = ICDAS_CAVITATION[next.icdas];
+      return { diagnosis: next };
+    }),
 
   setCase: (caseIndex) => set({ caseIndex: Math.max(0, Math.min(CASES.length - 1, caseIndex)) }),
   answerCase: (key, option) => set((s) => (key in s.caseAnswers ? {} : { caseAnswers: { ...s.caseAnswers, [key]: option } })),
@@ -301,17 +345,23 @@ export const useSim = create<Store>()((set, get) => ({
       cameraResetToken: s.cameraResetToken + 1,
     })),
   // Answers lock once given. After detection the cut face is shown, so the depth can be compared.
-  answerGameDetect: (caseId, band) =>
+  answerGameDetect: (caseId, code) =>
     set((s) =>
       s.game.answers[caseId]?.detect !== undefined
         ? {}
-        : { game: { ...s.game, answers: { ...s.game.answers, [caseId]: { ...s.game.answers[caseId], detect: band } } }, viewMode: 'section' },
+        : { game: { ...s.game, answers: { ...s.game.answers, [caseId]: { ...s.game.answers[caseId], detect: code } } }, viewMode: 'section' },
     ),
   answerGameManage: (caseId, pathway) =>
     set((s) =>
       s.game.answers[caseId]?.detect === undefined || s.game.answers[caseId]?.manage !== undefined
         ? {}
         : { game: { ...s.game, answers: { ...s.game.answers, [caseId]: { ...s.game.answers[caseId], manage: pathway } } } },
+    ),
+  answerGameJustify: (caseId, option) =>
+    set((s) =>
+      s.game.answers[caseId]?.manage === undefined || s.game.answers[caseId]?.justify !== undefined
+        ? {}
+        : { game: { ...s.game, answers: { ...s.game.answers, [caseId]: { ...s.game.answers[caseId], justify: option } } } },
     ),
   nextGameCase: () =>
     set((s) => ({

@@ -7,8 +7,8 @@ export const STEP_MS = 3600;
 export const SPEEDS = [0.5, 1, 1.5, 2];
 
 const EMPTY_REASON: Record<string, string> = {
-  diagnosis: 'The decision pathway updates the 3D lesion directly — use the variables in the right-hand panel.',
-  cases: 'Clinical cases are answered in the right-hand panel; the 3D view shows the case presentation.',
+  diagnosis: 'The decision pathway updates the 3D lesion directly — work through the steps in the information panel.',
+  cases: 'Clinical cases are answered in the information panel; the 3D view shows the case presentation.',
   game: 'Caries Quest is played in the game panel; the 3D view shows each patient’s lesion.',
   materialsCompare: 'Comparison view: choose two materials above. Switch to "Workflow" for a step-by-step animation.',
   materialsUnsupported:

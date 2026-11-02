@@ -1372,3 +1372,322 @@ table.compare th[scope='row'] {
   font-weight: 400;
   opacity: 0.7;
 }
+
+/* ICDAS schematic figures */
+.icdas-figure {
+  margin: 8px 0;
+}
+.icdas-figure svg {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  background: #ffffff; /* fixed: tissue colours are calibrated for a light ground */
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.icdas-figure__axis {
+  font-size: 8px;
+  fill: #64748b;
+}
+.icdas-figure figcaption {
+  font-size: 13px;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+.icdas-figure--compact figcaption {
+  font-size: 12px;
+}
+.icdas-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.icdas-gallery__item {
+  border-radius: 8px;
+  padding: 4px;
+}
+.icdas-gallery__item--on {
+  background: var(--accent-soft);
+  outline: 2px solid var(--accent);
+}
+.icdas-gallery__note {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--muted, #64748b);
+  margin: 0;
+}
+
+/* Glossary tooltips */
+.term {
+  position: relative;
+  display: inline;
+}
+.term__trigger {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.term__trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.term__tip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: min(280px, 80vw);
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--panel);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  box-shadow: var(--shadow);
+  /* Out of layout while hidden, so it can never widen the page. */
+  display: none;
+  pointer-events: none;
+}
+.term:hover .term__tip,
+.term__trigger:focus-visible + .term__tip,
+.term__tip--open {
+  display: block;
+}
+/* Phones: show definitions as a bottom sheet instead of next to the term. */
+@media (max-width: 640px) {
+  .term__tip {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    width: auto;
+    z-index: 60;
+  }
+}
+
+/* Caries decision pathway */
+.pathway-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0 0 12px;
+  list-style: none;
+  counter-reset: step;
+  font-size: 12px;
+}
+.pathway-overview li {
+  counter-increment: step;
+}
+.pathway-overview a {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  background: var(--panel-2);
+}
+.pathway-overview a::before {
+  content: counter(step) '. ';
+  color: var(--muted);
+}
+.pathway-overview a:hover,
+.pathway-overview a:focus-visible {
+  border-color: var(--accent);
+}
+.pathway-step {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 12px;
+  scroll-margin-top: 12px;
+}
+.pathway-step h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 2px;
+  font-size: 15px;
+}
+.pathway-step__n {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 700;
+  flex: none;
+}
+.pathway-step__q {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pathway-step__note {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+.pathway-group__title {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.form-grid .field {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.field__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.term__trigger--icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  font-style: italic;
+  text-decoration: none;
+  cursor: help;
+}
+
+/* Procedure checkpoints and completion review */
+.checkpoint {
+  border-left: 3px solid var(--accent);
+}
+.objectives {
+  margin: 8px 0 12px;
+  font-size: 14px;
+}
+.objectives summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.objectives h3 {
+  font-size: 13px;
+  margin: 8px 0 2px;
+}
+.steps-list__tag {
+  color: var(--accent);
+  font-size: 12px;
+}
+.review--final {
+  border: 2px solid var(--accent);
+}
+.review__table td ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.review__status {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.review__status--met {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.review__status--partly {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.review__status--needs-work {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.review__status--not-assessed {
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+/* Pulp-proximity gauge (cavity preparation) */
+.pulp-gauge {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 26;
+  width: min(300px, calc(100% - 24px));
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #e6edf7;
+  font-size: 12px;
+}
+.pulp-gauge__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.pulp-gauge .term__trigger--icon {
+  border-color: #93c5fd;
+  color: #93c5fd;
+}
+.pulp-gauge .term__tip {
+  background: #f8fafc;
+  color: #0f172a;
+}
+.pulp-gauge__row {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0;
+}
+.pulp-gauge__caption {
+  color: #cbd5e1;
+}
+.pulp-gauge__bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.35);
+  overflow: hidden;
+}
+.pulp-gauge__fill {
+  display: block;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.pulp-gauge__fill--ok { background: #4ade80; }
+.pulp-gauge__fill--warn { background: #fbbf24; }
+.pulp-gauge__fill--bad { background: #f87171; }
+.pulp-gauge__value--ok { color: #86efac; }
+.pulp-gauge__value--warn { color: #fcd34d; }
+.pulp-gauge__value--bad { color: #fca5a5; }
+.pulp-gauge__note {
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulp-gauge__fill { transition: none; }
+}
+.btn--inline {
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+}

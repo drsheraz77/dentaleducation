@@ -173,14 +173,15 @@ export const CARIES_STAGES: CariesStage[] = [
   },
 ];
 
+/** ICDAS coronal codes, worded as specified by the course reviewer (2026-11-02). */
 export const ICDAS_CODES: IcdasCode[] = [
-  { code: '0', label: 'Sound', description: 'No evidence of caries after prolonged air drying.' },
-  { code: '1', label: 'First visual change in enamel', description: 'Opacity or discolouration seen only after prolonged air drying, or confined to the pit/fissure.' },
-  { code: '2', label: 'Distinct visual change in enamel', description: 'Visible when wet; extends beyond the pit/fissure.' },
-  { code: '3', label: 'Localised enamel breakdown', description: 'Breakdown due to caries with no visible dentin or underlying shadow.' },
-  { code: '4', label: 'Underlying dark shadow from dentin', description: 'Shadow of discoloured dentin seen through apparently intact enamel, with or without localised breakdown.' },
-  { code: '5', label: 'Distinct cavity with visible dentin', description: 'Cavitation in opaque or discoloured enamel exposing dentin.' },
-  { code: '6', label: 'Extensive distinct cavity with visible dentin', description: 'Obvious loss of tooth structure; cavity deep and wide, dentin clearly visible.' },
+  { code: '0', label: 'Sound tooth surface', description: 'Sound tooth surface: no evidence of caries after prolonged air drying.' },
+  { code: '1', label: 'First visual change in enamel', description: 'First visual change in enamel, usually apparent only after drying (or confined to the pit or fissure).' },
+  { code: '2', label: 'Distinct visual change in enamel', description: 'Distinct visual change in enamel, visible when wet and dry.' },
+  { code: '3', label: 'Localised enamel breakdown', description: 'Localised enamel breakdown without visible dentin or an underlying dentinal shadow.' },
+  { code: '4', label: 'Underlying dentinal shadow', description: 'Underlying dentinal shadow, with or without enamel breakdown.' },
+  { code: '5', label: 'Distinct cavity with visible dentin', description: 'Distinct cavity with visible dentin.' },
+  { code: '6', label: 'Extensive cavity with visible dentin', description: 'Extensive cavity with visible dentin.' },
 ];
 
 export const CLASSIFICATION_EXAMPLES: ClassificationExample[] = [

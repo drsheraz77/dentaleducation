@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSim } from '../../state/store';
-import { GAME_STATUS, ICDAS_BANDS, PATHWAY_TITLES, QUEST_CASE_BY_ID, QUEST_CASES } from '../../data/game/cariesQuest';
+import { GAME_STATUS, ICDAS_OPTIONS, PATHWAY_TITLES, QUEST_CASE_BY_ID, QUEST_CASES } from '../../data/game/cariesQuest';
+import { ICDAS_CODES } from '../../data/cariesStages';
+import { IcdasFigure } from '../education/IcdasFigure';
 import { POINTS, gradeManagement, managementOptions, questRank, questScore, type ManageGrade } from '../../modules/game/cariesQuest';
 import { BulletList, References, Section } from '../education/common';
 
@@ -34,10 +36,11 @@ function Intro() {
   const best = readBest();
   return (
     <div>
-      <div className="eyebrow">Game · caries detection and management</div>
+      <div className="eyebrow">Game · caries detection, management and reasoning</div>
       <h2>Caries Quest</h2>
       <p>
-        {QUEST_CASES.length} simulated patients, in random order. For each one, read the clinical findings and make two calls. The 3D tooth
+        {QUEST_CASES.length} simulated patients (permanent and primary teeth), in random order. For each one, read the clinical findings and make
+        three calls. The 3D tooth
         is shown cleaned and dried: it shows cavities, and after your detection call it opens in cross-section so you can check the lesion
         depth. Early colour changes are subtle in 3D, as they are in the mouth, so rely on the findings.
       </p>
@@ -49,8 +52,11 @@ function Intro() {
           <strong>Manage</strong> — which option fits this patient best? (+{POINTS.manage}, or +{POINTS.managePartial} for an option that can be
           considered but is not the best fit)
         </li>
+        <li>
+          <strong>Justify</strong> — which reasoning supports that choice? (+{POINTS.justify})
+        </li>
       </ol>
-      <p>Get both right in a row to build a streak: each extra perfect case adds up to +{POINTS.streakMax} bonus points.</p>
+      <p>Get all three right in a row to build a streak: each extra perfect case adds up to +{POINTS.streakMax} bonus points.</p>
       {best !== null && <p data-testid="quest-best">Your best score in this browser: {best}</p>}
       <button type="button" className="btn" onClick={() => start()}>
         Start game
@@ -67,6 +73,7 @@ function Round() {
   const game = useSim((s) => s.game);
   const detect = useSim((s) => s.answerGameDetect);
   const manage = useSim((s) => s.answerGameManage);
+  const justify = useSim((s) => s.answerGameJustify);
   const next = useSim((s) => s.nextGameCase);
   const c = QUEST_CASE_BY_ID[game.order[game.index]];
   const a = game.answers[c.id] ?? {};
@@ -87,20 +94,22 @@ function Round() {
 
       <Section title="Step 1 · Detect: which ICDAS code fits the visual findings?">
         <div className="option-list" role="group" aria-label="ICDAS code">
-          {ICDAS_BANDS.map((b) => {
+          {ICDAS_OPTIONS.map((code) => {
             const done = a.detect !== undefined;
-            const cls = done ? (b.band === c.icdas ? ' option--correct' : b.band === a.detect ? ' option--wrong' : '') : '';
+            const cls = done ? (code === c.input.icdas ? ' option--correct' : code === a.detect ? ' option--wrong' : '') : '';
             return (
-              <button key={b.band} type="button" className={`option${cls}`} disabled={done} onClick={() => detect(c.id, b.band)}>
-                {b.label}
+              <button key={code} type="button" className={`option${cls}`} disabled={done} onClick={() => detect(c.id, code)}>
+                ICDAS {code} · {ICDAS_CODES.find((x) => x.code === code)!.label}
               </button>
             );
           })}
         </div>
         {a.detect !== undefined && (
-          <p className={`callout ${a.detect === c.icdas ? 'callout--ok' : 'callout--bad'}`} role="status">
-            <strong>{a.detect === c.icdas ? `Correct (+${POINTS.detect}).` : 'Not quite.'}</strong> {c.detectionNote} The 3D view now shows the cross-section.
-          </p>
+          <div className={`callout ${a.detect === c.input.icdas ? 'callout--ok' : 'callout--bad'}`} role="status">
+            <strong>{a.detect === c.input.icdas ? `Correct (+${POINTS.detect}).` : 'Not quite.'}</strong> {c.detectionNote} The 3D view now shows the
+            cross-section.
+            <IcdasFigure code={c.input.icdas} />
+          </div>
         )}
       </Section>
 
@@ -121,26 +130,51 @@ function Round() {
           {chosen && (
             <div className={`callout ${chosen.grade === 'best' ? 'callout--ok' : chosen.grade === 'partial' ? 'callout--info' : 'callout--bad'}`} role="status">
               <strong>{GRADE_TEXT[chosen.grade](chosen.fit === 'refer')}.</strong>
-              {chosen.pathway ? (
-                <BulletList items={chosen.pathway.reasoning} />
-              ) : (
-                <p style={{ margin: '6px 0 0' }}>The decision pathway does not list this option for these findings.</p>
-              )}
               {chosen.grade !== 'best' && keyed.pathway && (
+                <p style={{ margin: '6px 0 0' }}>
+                  <strong>Best fit:</strong> {keyed.pathway.title}
+                </p>
+              )}
+              {/* The pathway's reasoning is revealed after the justification, so it does not give the answer away. */}
+              {a.justify !== undefined && (
                 <>
-                  <p style={{ margin: '8px 0 0' }}>
-                    <strong>Best fit:</strong> {keyed.pathway.title}
-                  </p>
-                  <BulletList items={keyed.pathway.reasoning} />
+                  {chosen.pathway ? (
+                    <BulletList items={chosen.pathway.reasoning} />
+                  ) : (
+                    <p style={{ margin: '6px 0 0' }}>The decision pathway does not list this option for these findings.</p>
+                  )}
+                  {chosen.grade !== 'best' && keyed.pathway && <BulletList items={keyed.pathway.reasoning} />}
                 </>
               )}
             </div>
           )}
-          {chosen && <References ids={keyed.pathway?.refs ?? []} verification={GAME_STATUS} />}
         </Section>
       )}
 
       {a.manage !== undefined && (
+        <Section title="Step 3 · Justify: which reasoning best supports the best-fit option?">
+          <div className="option-list" role="group" aria-label="Justification">
+            {c.justify.options.map((o, i) => {
+              const done = a.justify !== undefined;
+              const cls = done ? (i === c.justify.correct ? ' option--correct' : i === a.justify ? ' option--wrong' : '') : '';
+              return (
+                <button key={o} type="button" className={`option${cls}`} disabled={done} onClick={() => justify(c.id, i)}>
+                  {o}
+                </button>
+              );
+            })}
+          </div>
+          {a.justify !== undefined && (
+            <p className={`callout ${a.justify === c.justify.correct ? 'callout--ok' : 'callout--bad'}`} role="status">
+              <strong>{a.justify === c.justify.correct ? `Sound reasoning (+${POINTS.justify}).` : 'Not the strongest reasoning.'}</strong>{' '}
+              {c.justify.explanation}
+            </p>
+          )}
+          {a.justify !== undefined && <References ids={keyed.pathway?.refs ?? []} verification={GAME_STATUS} />}
+        </Section>
+      )}
+
+      {a.justify !== undefined && (
         <button type="button" className="btn" onClick={next}>
           {last ? 'See results' : 'Next case →'}
         </button>
@@ -177,6 +211,9 @@ function Results() {
         <li>
           Management: {managed} of {score.rounds.length} best fit
         </li>
+        <li>
+          Reasoning: {score.rounds.filter((r) => r.justifyCorrect).length} of {score.rounds.length} justified soundly
+        </li>
         <li>Longest perfect streak: {score.bestStreak}</li>
       </ul>
       <Section title="Case by case">
@@ -184,7 +221,7 @@ function Results() {
           {score.rounds.map((r) => (
             <li key={r.caseId}>
               {QUEST_CASE_BY_ID[r.caseId].title}: {r.detectCorrect ? 'ICDAS ✓' : 'ICDAS ✗'}, management{' '}
-              {r.manage === 'best' ? '✓' : r.manage === 'partial' ? '½' : '✗'} — {r.points} pts
+              {r.manage === 'best' ? '✓' : r.manage === 'partial' ? '½' : '✗'}, reasoning {r.justifyCorrect ? '✓' : '✗'} — {r.points} pts
             </li>
           ))}
         </ol>

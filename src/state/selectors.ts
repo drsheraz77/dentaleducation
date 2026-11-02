@@ -20,6 +20,7 @@ import { QUIZ } from '../data/quiz';
 import { evaluateDiagnosis } from '../modules/diagnosis/decisionEngine';
 import { STIMULI } from '../data/dentinTubules';
 import { LESSON_STAGES } from '../data/studio/cariesLesson';
+import { CHECKPOINTS, checkpointKey } from '../data/procedureCheckpoints';
 import { QUEST_CASE_BY_ID } from '../data/game/cariesQuest';
 
 /** The anatomy module's longitudinal section, laid out like a textbook figure (callouts, brackets, light page). */
@@ -105,15 +106,36 @@ export function instrumentFeedback(
   return rule ? { ...rule, instrument: id } : null;
 }
 
-export function procedureVisual(state: Pick<SimState, 'instrumentChoices'>, procedureId: ProcedureId, stepIndex: number): ToothVisualState {
+/** The cavity shape a reasoning checkpoint imposes from its step onwards (e.g. non-selective removal). */
+function checkpointShape(state: Pick<SimState, 'checkpointAnswers'>, procedureId: ProcedureId): { from: number; shape: CavityShape } | null {
   const proc = PROCEDURE_BY_ID[procedureId];
-  const steps = proc.steps.map((step) => {
+  for (const cp of CHECKPOINTS[procedureId]) {
+    const answer = state.checkpointAnswers[checkpointKey(procedureId, cp.stepId)];
+    const shape = answer === undefined ? undefined : cp.options[answer]?.cavityShape;
+    if (shape) return { from: proc.steps.findIndex((st) => st.id === cp.stepId), shape };
+  }
+  return null;
+}
+
+export function procedureVisual(
+  state: Pick<SimState, 'instrumentChoices' | 'checkpointAnswers'>,
+  procedureId: ProcedureId,
+  stepIndex: number,
+  override?: CavityShape,
+): ToothVisualState {
+  const proc = PROCEDURE_BY_ID[procedureId];
+  const chosen = override ? { from: proc.steps.findIndex((st) => st.id === 'removal'), shape: override } : checkpointShape(state, procedureId);
+  const steps = proc.steps.map((step, i) => {
     const v: Partial<ToothVisualState> = { ...step.visual, camera: step.camera };
     const id = chosenInstrument(state, procedureId, step);
     const fb = instrumentFeedback(state, procedureId, step);
     if (id) v.instrument = { id, motion: INSTRUMENTS[id].motion };
     // An unsuitable instrument does not cut: the cavity stays as it was.
     if (fb && !fb.suitable) delete v.cavity;
+    if (chosen && i >= chosen.from && v.cavity) {
+      v.cavity = { ...v.cavity, shape: chosen.shape };
+      v.residualLesion = chosen.shape === 'selective';
+    }
     return v;
   });
   return accumulate({ lesion: proc.startingLesion }, steps, stepIndex);
@@ -235,6 +257,18 @@ export function deriveScene(s: SimState): SceneDescription {
       const fb = step ? instrumentFeedback(s, s.procedureId, step) : null;
       const current = procedureVisual(s, s.procedureId, s.step);
       const notice = fb && !fb.suitable ? { tone: 'warning' as const, text: fb.note } : null;
+      if (s.compareEndpoints && s.procedureId === 'selective-removal') {
+        const last = proc.steps.length - 1;
+        const clean = (v: ToothVisualState): ToothVisualState => ({ ...v, instrument: null, plannedOutline: false, isolation: 'none', camera: undefined });
+        return {
+          teeth: [
+            { visual: clean(procedureVisual(s, s.procedureId, last, 'selective')), caption: 'Selective removal' },
+            { visual: clean(procedureVisual(s, s.procedureId, last, 'nonSelective')), caption: 'Non-selective removal' },
+          ],
+          notice: { tone: 'info', text: 'Endpoints compared on the same schematic lesion. Turn on the cross-section to see the floor of each cavity.' },
+          show3D: true,
+        };
+      }
       if (s.compareBeforeAfter) {
         const before = mergeVisual({ lesion: proc.startingLesion });
         return {

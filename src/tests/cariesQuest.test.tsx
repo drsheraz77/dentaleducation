@@ -4,11 +4,11 @@ import userEvent from '@testing-library/user-event';
 import App from '../app/App';
 import { initialState, useSim } from '../state/store';
 import { deriveScene, getTimeline } from '../state/selectors';
-import { evaluateDiagnosis } from '../modules/diagnosis/decisionEngine';
+import { ICDAS_CAVITATION, evaluateDiagnosis } from '../modules/diagnosis/decisionEngine';
 import { getReference } from '../data/references';
-import { GAME_STATUS, ICDAS_BANDS, PATHWAY_TITLES, QUEST_CASES, QUEST_CASE_BY_ID, type IcdasBand } from '../data/game/cariesQuest';
+import { GAME_STATUS, ICDAS_OPTIONS, PATHWAY_TITLES, QUEST_CASES, QUEST_CASE_BY_ID } from '../data/game/cariesQuest';
+import { ICDAS_CODES } from '../data/cariesStages';
 import { POINTS, gradeManagement, managementOptions, questRank, questScore, shuffled } from '../modules/game/cariesQuest';
-import type { DiagnosisInput } from '../types';
 
 vi.mock('../three/ToothScene', () => ({ ToothScene: () => <div data-testid="scene-probe" /> }));
 
@@ -16,12 +16,6 @@ beforeEach(() => {
   useSim.setState(initialState);
 });
 
-/** ICDAS band implied by the scenario fields (visual cavitation status plus whether dentin is involved). */
-function expectedBand(i: DiagnosisInput): IcdasBand {
-  if (i.cavitation === 'microcavity') return '3';
-  if (i.cavitation === 'non-cavitated') return i.depth === 'enamel' ? '1–2' : '4';
-  return i.depth === 'deep-dentin' ? '6' : '5';
-}
 
 describe('Caries Quest content', () => {
   it('has at least eight draft cases with unique ids', () => {
@@ -31,9 +25,43 @@ describe('Caries Quest content', () => {
     for (const c of QUEST_CASES) expect(c.verification).toBe('draft_pending_review');
   });
 
-  it('keys each ICDAS answer consistently with the case findings', () => {
-    for (const c of QUEST_CASES) expect(c.icdas, c.id).toBe(expectedBand(c.input));
-    expect(ICDAS_BANDS.map((b) => b.band)).toEqual(['1–2', '3', '4', '5', '6']);
+  it('keys each ICDAS code consistently with the case findings', () => {
+    expect(ICDAS_OPTIONS).toEqual(ICDAS_CODES.map((c) => c.code));
+    for (const c of QUEST_CASES) {
+      const n = Number(c.input.icdas);
+      // Cavitation status follows the code; codes 4–6 involve dentin, 1–3 do not on visual grounds.
+      expect(c.input.cavitation, c.id).toBe(ICDAS_CAVITATION[c.input.icdas]);
+      if (n >= 4) expect(c.input.depth, c.id).not.toBe('enamel');
+      if (n >= 1 && n <= 3) expect(c.input.depth, c.id).toBe('enamel');
+      expect(evaluateDiagnosis(c.input).alerts.join(' '), c.id).not.toMatch(/disagree|cannot be confined/);
+    }
+  });
+
+  it('covers the required scenario types, in permanent and primary teeth', () => {
+    const has = (pred: (c: (typeof QUEST_CASES)[number]) => boolean) => QUEST_CASES.some(pred);
+    const i = (c: (typeof QUEST_CASES)[number]) => c.input;
+    expect(has((c) => i(c).activity === 'active' && i(c).cavitation === 'non-cavitated' && i(c).depth === 'enamel')).toBe(true);
+    expect(has((c) => i(c).activity === 'inactive' && i(c).cavitation === 'non-cavitated' && i(c).depth === 'enamel')).toBe(true);
+    expect(has((c) => i(c).cavitation === 'cavitated' && i(c).cleansability === 'cleansable')).toBe(true);
+    expect(has((c) => i(c).cavitation === 'cavitated' && i(c).cleansability === 'non-cleansable' && i(c).depth !== 'enamel')).toBe(true);
+    expect(has((c) => i(c).depth === 'deep-dentin' && i(c).pulp !== 'irreversible-signs' && i(c).pulp !== 'non-responsive' && c.keyed === 'selective')).toBe(true);
+    expect(has((c) => (i(c).pulp === 'irreversible-signs' || i(c).pulp === 'non-responsive') && c.keyed === 'endo')).toBe(true);
+    expect(has((c) => i(c).dentition === 'primary')).toBe(true);
+  });
+
+  it('asks for a justification with one sound answer per case', () => {
+    for (const c of QUEST_CASES) {
+      expect(new Set(c.justify.options).size, c.id).toBe(4);
+      expect(c.justify.correct).toBeGreaterThanOrEqual(0);
+      expect(c.justify.correct).toBeLessThan(4);
+      expect(c.justify.explanation.length).toBeGreaterThan(20);
+    }
+  });
+
+  it('never keys complete excavation for deep caries', () => {
+    for (const c of QUEST_CASES) expect(c.keyed, c.id).not.toBe('non-selective');
+    const deep = QUEST_CASES.filter((c) => c.others.includes('non-selective') && c.input.depth === 'deep-dentin');
+    for (const c of deep) expect(gradeManagement(c, 'non-selective').grade, c.id).toBe('wrong');
   });
 
   it('grades management with the reviewed decision pathway: the keyed answer is the only best fit', () => {
@@ -58,7 +86,7 @@ describe('Caries Quest content', () => {
 
 describe('Caries Quest scoring', () => {
   const order = QUEST_CASES.map((c) => c.id);
-  const perfect = Object.fromEntries(QUEST_CASES.map((c) => [c.id, { detect: c.icdas, manage: c.keyed }]));
+  const perfect = Object.fromEntries(QUEST_CASES.map((c) => [c.id, { detect: c.input.icdas, manage: c.keyed, justify: c.justify.correct }]));
 
   it('a perfect run scores the maximum, with growing streak bonuses', () => {
     const s = questScore(order, perfect);
@@ -74,16 +102,17 @@ describe('Caries Quest scoring', () => {
     expect(gradeManagement(shadow, 'restore').grade).toBe('partial');
     const s = questScore(['q-chalky-fissure', 'q-dentin-shadow', 'q-cavity-dentin'], {
       'q-chalky-fissure': perfect['q-chalky-fissure'],
-      'q-dentin-shadow': { detect: '4', manage: 'restore' },
+      'q-dentin-shadow': { detect: '4', manage: 'restore', justify: QUEST_CASE_BY_ID['q-dentin-shadow'].justify.correct },
       'q-cavity-dentin': perfect['q-cavity-dentin'],
     });
-    expect(s.rounds[1].points).toBe(POINTS.detect + POINTS.managePartial);
+    expect(s.rounds[1].points).toBe(POINTS.detect + POINTS.managePartial + POINTS.justify);
     expect(s.rounds[2].bonus).toBe(0);
     expect(s.streak).toBe(1);
   });
 
   it('scores a wrong detection and an unlisted option as zero', () => {
-    const s = questScore(['q-cavity-dentin'], { 'q-cavity-dentin': { detect: '1–2', manage: 'seal' } });
+    const wrongJustify = (QUEST_CASE_BY_ID['q-cavity-dentin'].justify.correct + 1) % 4;
+    const s = questScore(['q-cavity-dentin'], { 'q-cavity-dentin': { detect: '2', manage: 'seal', justify: wrongJustify } });
     expect(s.points).toBe(0);
     expect(questRank(0, s.max).title).toBe('Dental Explorer');
   });
@@ -110,6 +139,9 @@ describe('Caries Quest state', () => {
     st().answerGameManage(id, 'restore');
     st().answerGameManage(id, 'seal');
     expect(st().game.answers[id].manage).toBe('restore');
+    st().answerGameJustify(id, 2);
+    st().answerGameJustify(id, 1);
+    expect(st().game.answers[id].justify).toBe(2);
     st().nextGameCase();
     expect(st().game.index).toBe(1);
     expect(st().viewMode).toBe('external');
@@ -138,10 +170,15 @@ describe('Caries Quest UI', () => {
 
     for (let i = 0; i < QUEST_CASES.length; i++) {
       const c = QUEST_CASE_BY_ID[useSim.getState().game.order[i]];
-      await user.click(within(info).getByRole('button', { name: ICDAS_BANDS.find((b) => b.band === c.icdas)!.label }));
+      const label = `ICDAS ${c.input.icdas} · ${ICDAS_CODES.find((x) => x.code === c.input.icdas)!.label}`;
+      await user.click(within(info).getByRole('button', { name: label }));
       expect(within(info).getAllByRole('status')[0]).toHaveTextContent(/correct/i);
       await user.click(within(info).getByRole('button', { name: PATHWAY_TITLES[c.keyed] }));
       expect(within(info).getAllByRole('status')[1]).toHaveTextContent(/best fit/i);
+      // Reasoning is not shown until the justification is given.
+      expect(within(info).getAllByRole('status')[1]).not.toHaveTextContent(c.justify.explanation);
+      await user.click(within(info).getByRole('button', { name: c.justify.options[c.justify.correct] }));
+      expect(within(info).getAllByRole('status')[2]).toHaveTextContent(/sound reasoning/i);
       await user.click(within(info).getByRole('button', { name: i === QUEST_CASES.length - 1 ? 'See results' : /next case/i }));
     }
     const s = questScore(useSim.getState().game.order, useSim.getState().game.answers);

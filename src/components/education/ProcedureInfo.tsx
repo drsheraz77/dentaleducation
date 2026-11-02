@@ -5,6 +5,99 @@ import { ADHESIVE_PROTOCOLS, COMPARISON_LABELS, MATERIAL_BY_ID, PROTOCOL_BY_ID }
 import { chosenInstrument, instrumentFeedback, materialSteps, materialSupport } from '../../state/selectors';
 import type { ComparisonKey } from '../../types';
 import { BulletList, References, Section, SelectedStructureCard } from './common';
+import { CHECKPOINTS, CHECKPOINT_STATUS, CRITERION_LABEL, checkpointKey } from '../../data/procedureCheckpoints';
+import { reviewProcedure, type ReviewStatus } from '../../modules/procedures/review';
+
+function CheckpointCard() {
+  const s = useSim();
+  const proc = PROCEDURE_BY_ID[s.procedureId];
+  const step = proc.steps[s.step];
+  const cp = CHECKPOINTS[s.procedureId].find((c) => c.stepId === step.id);
+  if (!cp) return null;
+  const key = checkpointKey(s.procedureId, cp.stepId);
+  const chosen = s.checkpointAnswers[key];
+  const done = chosen !== undefined;
+  return (
+    <section className="card checkpoint" aria-label="Reasoning checkpoint">
+      <div className="eyebrow">Reasoning checkpoint · {CRITERION_LABEL[cp.criterion]}</div>
+      <strong>{cp.prompt}</strong>
+      <div className="option-list" role="group" aria-label={cp.prompt}>
+        {cp.options.map((o, i) => {
+          const cls = done ? (o.verdict === 'good' ? ' option--correct' : i === chosen ? ' option--wrong' : '') : '';
+          return (
+            <button key={o.text} type="button" className={`option${cls}`} disabled={done} onClick={() => s.answerCheckpoint(key, i)}>
+              {o.text}
+            </button>
+          );
+        })}
+      </div>
+      {done && (
+        <p className={`callout ${cp.options[chosen].verdict === 'good' ? 'callout--ok' : 'callout--bad'}`} role="status">
+          <strong>{cp.options[chosen].verdict === 'good' ? 'Sound decision.' : 'This would be an error.'}</strong> {cp.options[chosen].feedback}
+        </p>
+      )}
+    </section>
+  );
+}
+
+const STATUS_TEXT: Record<ReviewStatus, string> = {
+  met: 'Done well',
+  partly: 'Partly',
+  'needs-work': 'Needs improvement',
+  'not-assessed': 'Not yet assessed',
+};
+
+function CompletionReview() {
+  const s = useSim();
+  const proc = PROCEDURE_BY_ID[s.procedureId];
+  const review = reviewProcedure(s, s.procedureId);
+  const atEnd = s.step === proc.steps.length - 1;
+  return (
+    <section className={`card review${atEnd ? ' review--final' : ''}`} aria-label="Completion review" data-testid="procedure-review">
+      <div className="eyebrow">{atEnd ? 'Completion summary' : 'Review so far'}</div>
+      <p style={{ marginTop: 0 }}>
+        Checkpoints answered: {review.answered} of {review.checkpoints}.{' '}
+        {review.answered < review.checkpoints && 'Answer every checkpoint for a complete review.'}
+      </p>
+      <table className="compare review__table">
+        <tbody>
+          {review.rows.map((r) => (
+            <tr key={r.criterion}>
+              <th scope="row">{r.label}</th>
+              <td>
+                <span className={`review__status review__status--${r.status}`}>{STATUS_TEXT[r.status]}</span>
+                {r.notes.length > 0 && (
+                  <ul>
+                    {r.notes.map((n) => (
+                      <li key={n}>{n}</li>
+                    ))}
+                  </ul>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {review.strengths.length > 0 && (
+        <p>
+          <strong>Done well:</strong> {review.strengths.join(', ')}.
+        </p>
+      )}
+      {review.improvements.length > 0 && (
+        <p>
+          <strong>To improve:</strong> {review.improvements.join(', ')}.
+        </p>
+      )}
+      <p className="callout">
+        This review is formative feedback on simulated decisions. It is <strong>not</strong> a competency assessment: the simulator has no tactile
+        feedback, tissue hardness or cutting physics, so it cannot judge manual skill.
+      </p>
+      <button type="button" className="btn btn--ghost" onClick={s.restartProcedure}>
+        Restart this procedure
+      </button>
+    </section>
+  );
+}
 
 export function PreparationInfo() {
   const s = useSim();
@@ -12,11 +105,22 @@ export function PreparationInfo() {
   const step = proc.steps[s.step];
   const inst = chosenInstrument(s, s.procedureId, step);
   const fb = instrumentFeedback(s, s.procedureId, step);
+  const removalIndex = proc.steps.findIndex((st) => st.id === 'removal');
+  const removalCp = CHECKPOINTS[s.procedureId].find((c) => c.stepId === 'removal');
+  const removalAnswer = s.checkpointAnswers[checkpointKey(s.procedureId, 'removal')];
+  const nonSelectiveChosen = s.step >= removalIndex && removalAnswer !== undefined && removalCp?.options[removalAnswer]?.cavityShape === 'nonSelective';
   return (
     <div>
       <div className="eyebrow">Cavity preparation · educational simulation</div>
       <h2>{proc.name}</h2>
       <p>{proc.summary}</p>
+      <details className="objectives" open={s.step === 0}>
+        <summary>Learning objectives and prerequisites</summary>
+        <h3>Learning objectives</h3>
+        <BulletList items={proc.learningObjectives} />
+        <h3>Prerequisites</h3>
+        <BulletList items={proc.prerequisites} />
+      </details>
       {s.selectedStructure && <SelectedStructureCard id={s.selectedStructure} />}
       <div className="card">
         <div className="eyebrow">
@@ -27,6 +131,12 @@ export function PreparationInfo() {
         <p>{step.description}</p>
         <h3>Why does it matter?</h3>
         <p>{step.rationale}</p>
+        {nonSelectiveChosen && (
+          <p className="callout callout--bad">
+            You chose non-selective removal at the checkpoint, so the 3D view shows the cavity taken to hard dentin everywhere — compare its
+            distance from the pulp with the selective endpoint described above.
+          </p>
+        )}
         {inst && (
           <>
             <h3>Instrument</h3>
@@ -37,29 +147,27 @@ export function PreparationInfo() {
           </>
         )}
       </div>
+      <CheckpointCard />
       <Section title="Step-by-step">
         <ol className="steps-list">
           {proc.steps.map((st, i) => (
             <li key={st.id} aria-current={i === s.step ? 'step' : undefined} onClick={() => s.setStep(i)}>
               {st.title}
+              {CHECKPOINTS[s.procedureId].some((c) => c.stepId === st.id) && <span className="steps-list__tag"> · checkpoint</span>}
             </li>
           ))}
         </ol>
       </Section>
-      <Section title="Learning objectives">
-        <BulletList items={proc.learningObjectives} />
-      </Section>
-      <Section title="Prerequisites">
-        <BulletList items={proc.prerequisites} />
-      </Section>
+      <CompletionReview />
       <Section title="Safety and clinical limitations">
         <BulletList items={proc.safetyLimitations} />
       </Section>
       <p className="callout">
-        Educational simulation — not a validated clinical procedural trainer. Tissue removal is shown with simplified constructive solid geometry, not a
-        physical cutting model.
+        Educational simulation — not a validated clinical skills trainer. Tissue removal is shown with simplified constructive solid geometry; there is no
+        tactile feedback, tissue hardness or cutting physics.
       </p>
       <References ids={proc.refs} verification={proc.verification} />
+      <References ids={['schwendicke2016', 'innes2016', 'banerjee2015']} verification={CHECKPOINT_STATUS} />
     </div>
   );
 }

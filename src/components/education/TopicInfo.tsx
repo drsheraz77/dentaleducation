@@ -1,6 +1,9 @@
 import { useSim } from '../../state/store';
 import { ANATOMY, ANATOMY_TOUR } from '../../data/anatomy';
 import { CARIES_STAGES, CLASSIFICATION_EXAMPLES, ICDAS_CODES } from '../../data/cariesStages';
+import { ACTIVITY_FEATURES, ACTIVITY_PRINCIPLES, PATHWAY_REFS, PATHWAY_STATUS, PRIMARY_VS_PERMANENT } from '../../data/cariesPathway';
+import { IcdasGallery } from './IcdasFigure';
+import { Term } from './Term';
 import { BulletList, References, Section, SelectedStructureCard } from './common';
 import { currentStimulus } from '../../state/selectors';
 import { HYDRODYNAMIC_SUMMARY, TUBULES_REFS, TUBULES_VERIFICATION, tubuleResponse } from '../../data/dentinTubules';
@@ -153,8 +156,9 @@ export function ClassificationInfo() {
       <Section title="Management considerations">
         <p>{ex.managementNote}</p>
       </Section>
-      <Section title="ICDAS coronal codes (summary)">
-        <table className="compare">
+      <Section title="ICDAS coronal codes 0–6">
+        <IcdasGallery highlight={ex.icdasCode} />
+        <table className="compare" style={{ marginTop: 10 }}>
           <tbody>
             {ICDAS_CODES.map((c) => (
               <tr key={c.code} style={ex.icdasCode.includes(c.code) ? { background: 'var(--accent-soft)' } : undefined}>
@@ -176,6 +180,53 @@ export function ClassificationInfo() {
         score real lesions.
       </p>
       <References ids={ex.refs} verification={ex.verification} />
+      <Section title="Assessing lesion activity">
+        <p>
+          <Term id="activity">Activity</Term> is judged separately from severity (<Term id="icdas">ICDAS</Term> code).
+        </p>
+        <BulletList items={ACTIVITY_PRINCIPLES} />
+        <table className="compare" aria-label="Activity assessment criteria">
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col">Suggests active</th>
+              <th scope="col">Suggests inactive (arrested)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ACTIVITY_FEATURES.map((f) => (
+              <tr key={f.feature}>
+                <th scope="row">{f.feature}</th>
+                <td>{f.active}</td>
+                <td>{f.inactive}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
+      <Section title="Primary versus permanent teeth">
+        <table className="compare" aria-label="Primary versus permanent dentition">
+          <thead>
+            <tr>
+              <th scope="col">Aspect</th>
+              <th scope="col">Primary</th>
+              <th scope="col">Permanent</th>
+              <th scope="col">Why it matters</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PRIMARY_VS_PERMANENT.map((r) => (
+              <tr key={r.aspect}>
+                <th scope="row">{r.aspect}</th>
+                <td>{r.primary}</td>
+                <td>{r.permanent}</td>
+                <td>{r.implication}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
+      <References ids={PATHWAY_REFS} verification={PATHWAY_STATUS} />
     </div>
   );
 }

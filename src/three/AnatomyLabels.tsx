@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { StructureId, ToothVisualState } from '../types';
+import { remainingDentinOverPulp } from './geometry/prepPlan';
 import { ANATOMY } from '../data/anatomy';
 import { SITE_FRAMES } from './geometry/lesion';
 import { useSim } from '../state/store';
@@ -26,7 +27,7 @@ export interface LabelAnchor {
   kind: 'label' | 'caption' | 'callout' | 'bracket';
 }
 
-type Anchor = { id: StructureId; pos: [number, number, number] };
+type Anchor = { id: StructureId; pos: [number, number, number]; text?: string };
 
 const EXTERNAL: Anchor[] = [
   { id: 'enamel', pos: [3.0, 4.6, 3.6] },
@@ -64,18 +65,31 @@ export function structureAnchors(visual: ToothVisualState, section: boolean, sho
   const lesion = visual.lesion;
   const lesionVisible = lesion && (lesion.enamelDepth > 0.05 || lesion.dentinDepth > 0.02);
   const excavated = !!visual.cavity && visual.cavity.depth >= 1 && !visual.residualLesion;
-  if (lesion && lesionVisible && !excavated && (section || lesion.cavitation > 0.05 || lesion.site === 'root') && !visual.restoration) {
+  // At an excavation endpoint the section gets its own, more specific labels (below).
+  const endpoint = section && !!visual.cavity && visual.cavity.depth >= 1 && (visual.cavity.shape === 'selective' || visual.cavity.shape === 'nonSelective');
+  if (lesion && lesionVisible && !excavated && !endpoint && (section || lesion.cavitation > 0.05 || lesion.site === 'root') && !visual.restoration) {
     const f = SITE_FRAMES[lesion.site];
     const depth = f.enamelThickness + f.dentinToPulp * lesion.dentinDepth * 0.5;
     const p = f.origin.clone().addScaledVector(f.axis, depth);
     out.push({ id: 'lesion', pos: [p.x, p.y, section ? 0 : p.z + (lesion.site === 'root' ? 0.5 : 0)] });
+  }
+  // Endpoint of deep-caries excavation: what was kept at the periphery and over the pulp.
+  if (section && visual.cavity && visual.cavity.depth >= 1 && !visual.restoration) {
+    const rdt = remainingDentinOverPulp(visual.cavity, visual.lesion);
+    if (visual.cavity.shape === 'selective') {
+      out.push({ id: 'dentin', pos: [2.75, 4.0, 0], text: 'Hard peripheral dentin (sealed margin)' });
+      out.push({ id: 'lesion', pos: [0, 2.25, 0], text: 'Soft dentin left over the pulp' });
+    } else if (visual.cavity.shape === 'nonSelective' && rdt !== null) {
+      out.push({ id: 'dentin', pos: [2.75, 4.0, 0], text: 'Hard dentin everywhere' });
+      out.push({ id: 'pulp', pos: [0, 1.5, 0], text: `Floor ≈ ${rdt.toFixed(1)} mm from the pulp` });
+    }
   }
   if (visual.restoration) out.push({ id: 'restoration', pos: [-1.6, 5.8, 0] });
   if (visual.liner && section) out.push({ id: 'liner', pos: [-0.6, 3.0, 0] });
   // Structures under an opaque rubber dam are not visible from outside.
   const hidden = (a: Anchor) => !section && visual.isolation === 'rubberDam' && a.pos[1] < 1;
   return out
-    .filter((a) => !hidden(a)).map((a) => ({ key: `${a.id}@${a.pos.join(',')}`, text: shortName(a.id), structureId: a.id, pos: a.pos, kind: 'label' }));
+    .filter((a) => !hidden(a)).map((a) => ({ key: `${a.id}@${a.pos.join(',')}`, text: a.text ?? shortName(a.id), structureId: a.id, pos: a.pos, kind: 'label' }));
 }
 
 /**

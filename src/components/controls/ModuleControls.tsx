@@ -106,7 +106,7 @@ export function ModuleControls() {
     case 'diagnosis':
       return (
         <div className="module-controls">
-          <span className="control">Set the lesion and patient variables in the right-hand panel — the 3D lesion and the pathways update together.</span>
+          <span className="control">Work through the decision pathway in the information panel — the 3D lesion and the management options update together.</span>
         </div>
       );
     case 'preparation': {
@@ -156,6 +156,11 @@ export function ModuleControls() {
           >
             Compare before / after
           </button>
+          {s.procedureId === 'selective-removal' && (
+            <button type="button" className="chip" aria-pressed={s.compareEndpoints} onClick={() => s.setCompareEndpoints(!s.compareEndpoints)}>
+              Compare selective vs non-selective
+            </button>
+          )}
         </div>
       );
     }

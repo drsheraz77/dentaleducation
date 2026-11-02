@@ -1,13 +1,15 @@
 import { evaluateDiagnosis } from '../diagnosis/decisionEngine';
-import { QUEST_CASE_BY_ID, QUEST_RANKS, type IcdasBand, type PathwayId, type QuestCase } from '../../data/game/cariesQuest';
-import type { PathwayFit, TreatmentPathway } from '../../types';
+import { QUEST_CASE_BY_ID, QUEST_RANKS, type PathwayId, type QuestCase } from '../../data/game/cariesQuest';
+import type { IcdasScore, PathwayFit, TreatmentPathway } from '../../types';
 
-/** Points: detection 100; management 150 (consider/refer) or 75 (may consider); streak bonus for perfect rounds. */
-export const POINTS = { detect: 100, manage: 150, managePartial: 75, streakStep: 25, streakMax: 100 } as const;
+/** Points: detection 100; management 150 (consider/refer) or 75 (may consider); justification 50; streak bonus for perfect rounds. */
+export const POINTS = { detect: 100, manage: 150, managePartial: 75, justify: 50, streakStep: 25, streakMax: 100 } as const;
 
 export interface QuestAnswer {
-  detect?: IcdasBand;
+  detect?: IcdasScore;
   manage?: PathwayId;
+  /** Index of the chosen justification. */
+  justify?: number;
 }
 
 export type ManageGrade = 'best' | 'partial' | 'wrong';
@@ -34,6 +36,7 @@ export interface RoundResult {
   caseId: string;
   detectCorrect: boolean;
   manage: ManageGrade | null;
+  justifyCorrect: boolean;
   points: number;
   bonus: number;
   complete: boolean;
@@ -55,13 +58,17 @@ export function questScore(order: string[], answers: Record<string, QuestAnswer>
   for (const id of order) {
     const c = QUEST_CASE_BY_ID[id];
     const a = answers[id] ?? {};
-    const detectCorrect = a.detect === c.icdas;
+    const detectCorrect = a.detect === c.input.icdas;
     const manage = a.manage ? gradeManagement(c, a.manage).grade : null;
-    const complete = a.detect !== undefined && a.manage !== undefined;
-    let points = (detectCorrect ? POINTS.detect : 0) + (manage === 'best' ? POINTS.manage : manage === 'partial' ? POINTS.managePartial : 0);
+    const justifyCorrect = a.justify === c.justify.correct;
+    const complete = a.detect !== undefined && a.manage !== undefined && a.justify !== undefined;
+    let points =
+      (detectCorrect ? POINTS.detect : 0) +
+      (manage === 'best' ? POINTS.manage : manage === 'partial' ? POINTS.managePartial : 0) +
+      (justifyCorrect ? POINTS.justify : 0);
     let bonus = 0;
     if (complete) {
-      if (detectCorrect && manage === 'best') {
+      if (detectCorrect && manage === 'best' && justifyCorrect) {
         streak += 1;
         bonus = Math.min(POINTS.streakMax, POINTS.streakStep * (streak - 1));
       } else {
@@ -70,9 +77,9 @@ export function questScore(order: string[], answers: Record<string, QuestAnswer>
       bestStreak = Math.max(bestStreak, streak);
     }
     points += bonus;
-    rounds.push({ caseId: id, detectCorrect, manage, points, bonus, complete });
+    rounds.push({ caseId: id, detectCorrect, manage, justifyCorrect, points, bonus, complete });
   }
-  const max = order.reduce((m, _, i) => m + POINTS.detect + POINTS.manage + Math.min(POINTS.streakMax, POINTS.streakStep * i), 0);
+  const max = order.reduce((m, _, i) => m + POINTS.detect + POINTS.manage + POINTS.justify + Math.min(POINTS.streakMax, POINTS.streakStep * i), 0);
   return {
     rounds,
     points: rounds.reduce((s, r) => s + r.points, 0),
